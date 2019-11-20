@@ -1,4 +1,6 @@
 #!/bin/bash
+# (Standard) "Simple" StateLess migration - to be executed at the source
+
 
 # to run a container from an image and test it:
 # 	docker run -d -p HOST_PORT:CONT_PORT IMAGE:TAG
@@ -7,7 +9,7 @@
 # TODO: errors handling
 
 if [ $# -ne 2 ] && [ $# -ne 3 ]; then
-	echo "Required 2 or 3 arguments: TO_HOST (IMAGE TAG)|(CONTAINER)"
+	echo "Required arguments: TO_HOST (IMAGE TAG)|(CONTAINER)"
 	exit 1
 fi
 
@@ -18,12 +20,13 @@ if [ $# -eq 2 ]; then
 	CONTAINER=$2
 	
 	# given a container, find out which image it is using
-	IMAGE_NAME=$(docker container inspect $CONTAINER -f '{{.Config.Image}}')
-	IMAGE=$(echo $IMAGE_NAME | cut -d: -f1)
-	TAG=$(echo $IMAGE_NAME | cut -d: -f2)
+	IMAGE_TAG=$(docker container inspect $CONTAINER -f '{{.Config.Image}}')
+	IMAGE=$(echo $IMAGE_TAG | cut -d: -f1)
+	TAG=$(echo $IMAGE_TAG | cut -d: -f2)
 else
 	IMAGE=$2
 	TAG=$3
+	IMAGE_TAG="$IMAGE:$TAG"
 fi
 
 # replace / with .
@@ -43,7 +46,7 @@ REMOTE_DIR=/tmp/
 # - file name based on image name, but either calculate the digest or keep a mapping table
 
 # backup (tar) from an image
-docker save -o $LOCAL_PATH $IMAGE:$TAG
+docker save -o $LOCAL_PATH $IMAGE_TAG
 # (no volumes)
 
 # send backup to destination
@@ -51,6 +54,7 @@ scp $LOCAL_PATH $USER@$TO_HOST:$REMOTE_DIR
 
 # TODO: docker save and backup send operations may be pipelined (not with scp, though [?])
 # similar pipeline with reception and docker load
+
 
 # ################ execute script on peer ################
 # load image from tar
@@ -60,17 +64,21 @@ ssh $USER@$TO_HOST "docker load -i ${REMOTE_DIR}${TAR_NAME}"
 ssh $USER@$TO_HOST "docker image ls"
 
 # start container from image
-ssh $USER@$TO_HOST "docker run -d -p 8080:8080 $IMAGE:$TAG"
+ssh $USER@$TO_HOST "docker run -d -p 8080:8080 $IMAGE_TAG"
 # TODO: generic port mapping
 
-# clean up
+# (clean up)
 ssh $USER@$TO_HOST "rm ${REMOTE_DIR}${TAR_NAME}"
 # or keep it for future uses (migrations FROM this node)
+
+
+# stop container at the source
+# TODO: ...
 
 # docker container ls -a
 # (docker ps -a)
 # docker container stop CONTAINER	# The main process inside the container will receive SIGTERM, and after a grace period, SIGKILL
 # docker container rm CONTAINER
-# docker image rm IMAGE_NAME
-# (docker rmi IMAGE_NAME)
+# docker image rm IMAGE_TAG
+# (docker rmi IMAGE_TAG)
 # docker image ls
