@@ -1,26 +1,46 @@
+#!/bin/bash
+
+# docker container ls
+# docker container ls -a | grep registry
+# docker container start [sec_]registry
+
 # ################ START/STOP LOCAL REGISTRY ################
 # $1	if present, run sec_registry (with TLS) using $1 as the directory where to look for domain.crt and domain.key
 if [ $# -ne 1 ]; then
 	docker run -d \
 		-p 5000:5000 \
-		--restart=unless-stopped \
 		-v /home/ubu2admin/registry:/var/lib/registry \
+		--restart=unless-stopped \
 		--name registry \
 		registry:2
 else
 	CERTS=$(cd "$1"; pwd) 	# absolute path (cd performed in a sub-shell)
-	echo "Running registry with TLS (certificate in $CERTS)..."
+	CONFIG_FILE="config.yml"
+	echo "Running registry with TLS (certificate in $CERTS) ..."
 	
-	docker run -d \
-		-v "$CERTS":/certs \
-		-e REGISTRY_HTTP_ADDR=0.0.0.0:443 \
-		-e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/domain.crt \
-		-e REGISTRY_HTTP_TLS_KEY=/certs/domain.key \
-		-p 443:443 \
-		--restart=unless-stopped \
-		-v /home/ubu2admin/registry:/var/lib/registry \
-		--name sec_registry \
-		registry:2
+	if [ ! -f "$CONFIG_FILE" ]; then
+		docker run -d \
+			-p 443:443 \
+			-v "$CERTS":/certs \
+			-e REGISTRY_HTTP_ADDR=0.0.0.0:443 \
+			-e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/domain.crt \
+			-e REGISTRY_HTTP_TLS_KEY=/certs/domain.key \
+			-v /home/ubu2admin/registry:/var/lib/registry \
+			--restart=unless-stopped \
+			--name sec_registry \
+			registry:2
+	else
+		# instead of using -e arguments, you can specify an alternate YAML configuration file by mounting it as a volume in the container
+		echo "... using $CONFIG_FILE configuration file ..."
+		docker run -d \
+			-p 443:443 \
+			-v "$CERTS":/certs \
+			-v /home/ubu2admin/registry:/var/lib/registry \
+			-v `pwd`/$CONFIG_FILE:/etc/docker/registry/config.yml \
+			--restart=unless-stopped \
+			--name sec_registry \
+			registry:2
+	fi
 fi
 
 # If you want to change the port the registry listens on within the container

@@ -45,7 +45,7 @@ The _entire_ container image is transferred from the source to the destination.
    - Migration request status updated to `completed`
 
 #### Script ####
-The script, to be executed at the source, can be found here: [bash file](standard%20migration/simple/ssl_migr_source.sh)
+The script, to be executed at the source, can be found here: [bash file](../standard%20migration/simple/ssl_migr_source.sh)
 
 It requires 2 or 3 arguments, the first of which (`TO_HOST`) is the IP of the destination node. The others can be:
 - `CONTAINER`: the migrating container name or ID
@@ -85,7 +85,7 @@ Layers are stored and distributed through the **master's Registry**.
    - Migration request status updated to `completed`
 
 #### Script ####
-The script, to be executed at the source, can be found here: [bash file](standard%20migration/layered/lrm_migr_source.sh)
+The script, to be executed at the source, can be found here: [bash file](../standard%20migration/layered/lrm_migr_source.sh)
 
 Compared to the script of the [previous section](#script), this one requires an additional argument in second position: the name to be used to tag the container image so it can be pushed and pulled from the Registry.
 It would normally be in the form: `REGISTRY[:PORT]/REPOSITORY:TAG`

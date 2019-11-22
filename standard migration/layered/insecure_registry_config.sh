@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # ################ Plain HTTP registry (HIGHLY INSECURE) ################
 # In each node:
 # 1) edit /etc/docker/daemon.json
