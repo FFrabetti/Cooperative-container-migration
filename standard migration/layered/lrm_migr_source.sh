@@ -56,8 +56,7 @@ ssh $USER@$TO_HOST "docker pull $REGISTRY_TAG"
 ssh $USER@$TO_HOST "docker run -d -p 8080:8080 $REGISTRY_TAG"
 # TODO: generic port mapping
 
-
-# stop container at the source
+# (stop container at the source)
 # TODO: ...
 
 # docker container ls -a

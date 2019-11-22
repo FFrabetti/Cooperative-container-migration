@@ -2,7 +2,7 @@
 # (Standard) "Simple" StateLess migration - to be executed at the source
 
 
-# to run a container from an image and test it:
+# to run a container from an image and test it (REST):
 # 	docker run -d -p HOST_PORT:CONT_PORT IMAGE:TAG
 # 	curl localhost:HOST_PORT
 
@@ -71,8 +71,7 @@ ssh $USER@$TO_HOST "docker run -d -p 8080:8080 $IMAGE_TAG"
 ssh $USER@$TO_HOST "rm ${REMOTE_DIR}${TAR_NAME}"
 # or keep it for future uses (migrations FROM this node)
 
-
-# stop container at the source
+# (stop container at the source)
 # TODO: ...
 
 # docker container ls -a
