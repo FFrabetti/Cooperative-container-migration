@@ -32,7 +32,10 @@ for l in json.load(sys.stdin)['layers']:
 elif [ $# -eq 4 ] && [ $4 = "config" ]; then
 	# $4 := config
 	curl -Ss $1/v2/$2/manifests/$3 \
-		-H "Accept: application/vnd.docker.distribution.manifest.v2+json" | python3 -c "$IMPORT print(json.load(sys.stdin)['config']['digest'])"
+		-H "Accept: application/vnd.docker.distribution.manifest.v2+json" | python3 -c "
+$IMPORT
+print(json.load(sys.stdin)['config']['digest'])
+"
 
 else
 	SHNAME=$(basename "$0")

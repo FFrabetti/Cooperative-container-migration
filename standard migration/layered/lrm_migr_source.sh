@@ -3,12 +3,7 @@
 
 
 # NOTE: the registry has to be running and reachable!
-# docker run -d \
-	# -p 5000:5000 \
-	# --restart=unless-stopped \
-	# -v /home/ubu2admin/registry:/var/lib/registry \
-	# --name registry \
-	# registry:2
+# docker run -d -p 5000:5000 --restart=on-failure --name registry registry:2
 
 # TODO: errors handling
 
@@ -41,6 +36,8 @@ fi
 # (no volumes)
 # }
 
+# NOTE: push or pull operations may be LOCAL, depending on the location of the registry
+# in any case, just the layers not already present are transferred
 
 docker tag $IMAGE_TAG $REGISTRY_TAG
 docker push $REGISTRY_TAG

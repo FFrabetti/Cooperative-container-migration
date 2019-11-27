@@ -1,11 +1,13 @@
 #!/bin/bash
 
+# $1 := [<CERTS_DIR>]
+# if present, run sec_registry (with TLS) looking in <CERTS_DIR> for domain.crt and domain.key
+
 # docker container ls
 # docker container ls -a | grep registry
 # docker container start [sec_]registry
 
 # ################ START/STOP LOCAL REGISTRY ################
-# $1	if present, run sec_registry (with TLS) using $1 as the directory where to look for domain.crt and domain.key
 if [ $# -ne 1 ]; then
 	docker run -d \
 		-p 5000:5000 \
