@@ -120,6 +120,104 @@ The same script can be used with these variations:
 Layers are stored and distributed through the **source's Registry**.
 
 #### Differences ####
-Compared to the case of a source-side Registry, the `pull` operation is replaced by a series of HTTP `GET` requests targeting the _individual layers_ not already present at the destination.
+Compared to the case of a source-side Registry, the `pull` operation is replaced by a series of HTTP `GET` requests to the source's Registry targeting the _individual layers_ required to run the container and not already present at the destination.
 
 The granularity is no more just the container image, but its single constituent layers. This gives us more control over the pulling process, but we also have to re-implement the mechanism that checks whether a given layer is already locally present or not.
+
+#### Steps ####
+1. Migration request issued to both nodes
+2. \[***off-line push***] _(A Registry at the source manages the images of all containers running on the node)_
+3. The destination downloads from the Registry just the layers it needs (**GET**)
+   1. Fetch the list of layers the image is made of
+   2. For each layer, check its presence at the destination
+   3. `GET` all new layers from the Registry
+   4. Create container image at the destination
+4. New container started at the destination
+5. User-service handover from source to destination
+   - \(Original container stopped at the source)
+   - Migration request status updated to `completed`
+
+
+#### Script ####
+The script, to be executed at the destination, can be found here: [bash file](../standard%20migration/layered/lcc_migr_dest.sh)
+
+To handle incoming images, a second Registry must be running at the destination. This allows to verify, given a layer's digest, if it is already present in one of the local repositories (step 3.2), and to correctly manage the acquired layers and image meta-data (in the form of a _manifest_) at the destination (step 3.4).
+
+The script accepts 4 parameters: the source's address, the migrating container image repository and tag and, optionally, the destination's Registry address (default: `localhost:5000`)
+
+The sub-steps of 3. described above are implemented as follows:
+1. Get the image manifest
+   ```
+   curl $SRC_REGISTRY/v2/$REPOSITORY/manifests/$TAG -o "$MANIFEST_FILE" \
+		-H "Accept: application/vnd.docker.distribution.manifest.v2+json"
+   ```
+   from which you can obtain the list of layers and their digests (field `layers` \[array] and `layers[X].digest`).
+   
+2. Check the presence of a given layer (through its digest) in a (local) repository
+   ```
+   curl $REGISTRY/v2/$REPOSITORY/blobs/$DIGEST \
+		-I -X HEAD \
+		-H "Accept: application/vnd.docker.image.rootfs.diff.tar.gzip"
+   ```
+   Positive with a `200 OK` response.
+   
+   If the layer exists in `REPOSITORY`, then it can be mounted to the target repository
+   ```
+   curl "$REGISTRY/v2/$TARGET_REPO/blobs/uploads/?mount=$DIGEST&from=$REPOSITORY" \
+		-I -X POST \
+		-H "Content-Length: 0"
+   ```
+
+3. Otherwise, the layer must be fetched from the source's Registry
+   ```
+   curl "$SRC_REGISTRY/v2/$REPOSITORY/blobs/$DIGEST" -o "$LAYER_FILE" \
+		-H "Accept: application/vnd.docker.image.rootfs.diff.tar.gzip"
+   ```
+
+4. Each new layer must be pushed to the local Registry by first getting an upload URL (`UPLOAD_URL`)
+   ```
+   curl $REGISTRY/v2/$REPOSITORY/blobs/uploads/ \
+		-I -X POST \
+		-H "Accept: application/vnd.docker.image.rootfs.diff.tar.gzip"
+   ```
+   If `202 Accepted` response, the upload URL is returned in the `Location` header.
+   
+   Then, given `LEN` the size in bytes of the layer, this can be uploaded as a single chunk (_monolithic upload_). See the [documentation](https://docs.docker.com/registry/spec/api/#uploading-the-layer) for additional details and options.
+   ```   
+   curl -v "$UPLOAD_URL?digest=$DIGEST" \
+		-X PUT \
+		-H "Content-Length: $LEN" \
+		-H "Range: 0-$LEN" \
+		-H "Content-Type: application/octet-stream" \
+		--data-binary @"$LAYER_FILE"	
+   ```
+
+   The destination's Registry also needs the _configuration blob_, with data like the version/tag of the image, it's reference architecture and OS, and so on.
+   This must be downloaded from the source and uploaded in a similar fashion to what has been done for the image layers:
+   ```
+   curl $SRC_REGISTRY/v2/$REPOSITORY/blobs/$CONF_DIGEST -o "$CONF_FILE" \
+		-H "Accept: application/vnd.docker.container.image.v1+json"
+   ```
+   its digest and length (`CONF_DIGEST` and `CONF_LEN`) can be obtained from the image manifest (`config.digest` and `config.size`).
+   ```
+   curl $REGISTRY/v2/$REPOSITORY/blobs/uploads/ \
+		-I -X POST \
+		-H "Accept: application/vnd.docker.container.image.v1+json"
+   ```
+   If `202 Accepted` response, the upload URL is returned in the `Location` header.
+   ```
+   curl "$UPLOAD_URL?digest=$CONF_DIGEST" \
+		-X PUT \
+		-H "Content-Length: $CONF_LEN" \
+		-H "Range: 0-$CONF_LEN" \
+		-H "Content-Type: application/octet-stream" \
+		--data @"$CONF_FILE"
+   ```
+   
+   Finally, the manifest itself can be uploaded to the local Registry
+   ```
+   curl "$REGISTRY/v2/$REPOSITORY/manifests/$TAG" \
+		-X PUT \
+		-H "Content-Type: application/vnd.docker.distribution.manifest.v2+json" \
+		--data @"$MANIFEST_FILE"
+   ```
