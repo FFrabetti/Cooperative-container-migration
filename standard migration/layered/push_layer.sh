@@ -24,6 +24,11 @@ DIGEST=$3
 
 DIGEST=${DIGEST%$'\r'} # remove Win CR
 
+# set PATH so to find other scripts in the same dir
+TMP_PATH=$PATH 	# just in case I ever need the original PATH
+DIR=$(dirname "$0")
+PATH="$PATH:$DIR"
+
 if [ $# -eq 6 ]; then	# monolithic upload
 	LEN=$4
 	UPLOAD_URL="$5"
@@ -58,8 +63,8 @@ else	# cross repository blob mount
 fi
 
 # check layer presence
-if [ -f ./test_layer.sh ]; then
-	if ./test_layer.sh $REGISTRY $REPO $DIGEST; then
+if [ -f test_layer.sh ]; then
+	if test_layer.sh $REGISTRY $REPO $DIGEST; then
 		echo "Layer successfully uploaded!"
 	else
 		echo "ERROR: layer not found"
