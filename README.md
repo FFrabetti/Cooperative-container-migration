@@ -6,4 +6,7 @@ Research conducted at Winlab, Rutgers University (NJ, USA).
 
 ## Documentation ##
 
-- [Traditional migration](docs/traditional%20migration.md)
+- Intra-cluster
+  - Stateless
+    - [Traditional migration](docs/traditional%20migration.md)
+    - [Cooperative migration](docs/cooperative%20migration.md)

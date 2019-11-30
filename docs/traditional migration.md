@@ -15,13 +15,12 @@ The following examples assume that all the nodes of the cluster
   - If needed, this can be configured through the variable `USER`
 
 #### Scenarios ####
-- [“Simple” migration: backup and restore](#simple-migration-backup-and-restore)
-- Layered Registry-based migration
+- **[“Simple” migration: backup and restore](#simple-migration-backup-and-restore)**
+- **Layered Registry-based migration**
   - [Master-managed Registry](#master-managed-registry)
-  - Peer-to-peer
-    - [Destination-side Registry](#destination-side-registry)
-    - [Source-side Registry](#source-side-registry)
-  - [Custom client (single layers fetching)](#custom-client-single-layers-fetching)
+  - [Destination-side Registry](#destination-side-registry)
+  - [Source-side Registry](#source-side-registry)
+- **[Layered custom client](#layered-custom-client)** (single layers fetching)
 
 ## “Simple” migration: backup and restore ##
 The _entire_ container image is transferred from the source to the destination.
@@ -54,7 +53,6 @@ It requires 2 or 3 arguments, the first of which (`TO_HOST`) is the IP of the de
 The backup file is stored locally at the source in the current directory, with the name `REPOSITORY.TAG.tar` (`/` replaced with `.`), then it is transferred to the destination over `scp` to `/tmp`.
 
 Optional operations are preceded by a comment line in brackets and they may be commented out.
-
 
 ## Layered Registry-based migration ##
 Image layers _not already present_ are transferred from the source to the destination.  
@@ -116,7 +114,7 @@ The same script can be used with these variations:
 - The Registry must be running at the source (with notion of all the images used by its containers)
 - The second argument must correctly address the source's Registry
 
-### Custom client (single layers fetching) ###
+## Layered custom client ##
 Layers are stored and distributed through the **source's Registry**.
 
 #### Differences ####
@@ -129,14 +127,13 @@ The granularity is no more just the container image, but its single constituent 
 2. \[***off-line push***] _(A Registry at the source manages the images of all containers running on the node)_
 3. The destination downloads from the Registry just the layers it needs (**GET**)
    1. Fetch the list of layers the image is made of
-   2. For each layer, check its presence at the destination
+   2. For each layer, check its presence locally
    3. `GET` all new layers from the Registry
    4. Create container image at the destination
 4. New container started at the destination
 5. User-service handover from source to destination
    - \(Original container stopped at the source)
    - Migration request status updated to `completed`
-
 
 #### Script ####
 The script, to be executed at the destination, can be found here: [bash file](../standard%20migration/layered/lcc_migr_dest.sh)
