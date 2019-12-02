@@ -20,9 +20,13 @@ REGISTRY=$1
 PERIOD=$2
 WORK_DIR=$3
 
+shift
+shift
+shift
+
 NODES=()
 while (( $# )); do
-	NODES+=($4)
+	NODES+=($1)
 	shift
 done
 

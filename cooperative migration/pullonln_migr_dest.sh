@@ -1,5 +1,5 @@
 #!/bin/bash
-# Centralized Pull-based migration - to be executed at the destination
+# Pull/On-line migration - to be executed at the destination
 
 # TODO: handle errors ...
 
@@ -8,26 +8,43 @@
 # $1 := <SOURCE_REGISTRY>
 # $2 := <IMAGE_REPO>
 # $3 := <IMAGE_TAG>
-# $4 := <CENTRAL_REGISTRY>
-# $5 := [<DEST_REGISTRY>]
+# $4 := <DEST_REGISTRY>
+# $5 := <NODE_1>
+# ...
+# [$N := <NODE_(N-4)>]
+
+if [ $# -lt 5 ]; then
+	echo "Usage: $0 SRC_REGISTRY REPO TAG DEST_REGISTRY NODE [NODEs...]"
+	exit 1
+fi
 
 SOURCE_REGISTRY=$1
 IMAGE_REPO=$2
 IMAGE_TAG=$3
-CENTRAL_REGISTRY=$4
-DEST_REGISTRY="localhost:5000"
+DEST_REGISTRY=$4
 
-if [ $# -eq 5 ]; then
-	DEST_REGISTRY=$5
-fi
+shift
+shift
+shift
+shift
 
-# test local Registry
-# curl -v $DEST_REGISTRY/v2/
+NODES=()
+while (( $# )); do
+	NODES+=($1)
+	shift
+done
 
 # set PATH so to find other scripts in the same dir
 TMP_PATH=$PATH 	# just in case I ever need the original PATH
 DIR=$(dirname "$0")
 PATH="$PATH:$DIR"
+
+get_repos () {
+	curl -Ss $1/v2/_catalog | python3 -c "
+import sys, json;
+for r in json.load(sys.stdin)['repositories']:
+	print(r)"
+}
 
 MANIFEST_FILE="$(echo $IMAGE_REPO | sed 's/\//./g').$IMAGE_TAG.mnf"
 
@@ -83,23 +100,22 @@ done
 URL_FILE="upload_url.tmp"
 CONF_FILE="conf_blob.tmp"
 
-# DIGEST --> URL (REGISTRY+REPOSITORY)
-# 3.1 get manifest from CENTRAL_REGISTRY
-MNF="$(echo $IMAGE_REPO | sed 's/\//./g').$IMAGE_TAG.urls.mnf"
-curl -Ss $CENTRAL_REGISTRY/v2/$IMAGE_REPO/manifests/$IMAGE_TAG \
-	-o "$MNF" \
-	-H "Accept: application/vnd.docker.distribution.manifest.v2+json"
-
-# 3.2 for each new layer: parse JSON and get an URL (chosen with a certain policy)
 for DIGEST in ${newlayers[@]}; do
-	URL=$(cat "$MNF" | python3 $DIR/get_url_from_digest.py $DIGEST)
-
-	# #### for periodic pull requests performed by the destination itself ####
-	#LAYER_FILE="$WORK_DIR/${DIGEST}.txt"
-	#if [ -f "$LAYER_FILE" ]; then
-	#	URL=$(head "$LAYER_FILE" -n 1) # policy: first URL
-	#fi
-	# #### #### ####
+	# on-line pull
+	URL=""
+	for NODE in ${NODES[@]}; do
+		for REPO in $(get_repos $NODE); do
+			echo "pull: querying $NODE $REPO ..."
+			if test_layer.sh $NODE $REPO $DIGEST; then
+				URL="$NODE/v2/$REPO/blobs"
+				break
+			fi
+		done
+		
+		if [ $URL ]; then
+			break
+		fi
+	done
 
 	echo "fetching layer from: $URL/$DIGEST"
 	curl -sS "$URL/$DIGEST" -o "${DIGEST}_layer.out" \
