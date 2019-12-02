@@ -97,7 +97,9 @@ for DIGEST in ${newlayers[@]}; do
 	# #### for periodic pull requests performed by the destination itself ####
 	#LAYER_FILE="$WORK_DIR/${DIGEST}.txt"
 	#if [ -f "$LAYER_FILE" ]; then
-	#	URL=$(head "$LAYER_FILE" -n 1) # policy: first URL
+	#	URL=$(head "$LAYER_FILE" -n 1) 	# policy: first URL
+	#else
+	#	URL="$SOURCE_REGISTRY/v2/$IMAGE_REPO/blobs"
 	#fi
 	# #### #### ####
 

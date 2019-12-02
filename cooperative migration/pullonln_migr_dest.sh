@@ -112,10 +112,14 @@ for DIGEST in ${newlayers[@]}; do
 			fi
 		done
 		
-		if [ $URL ]; then
-			break
+		if [ $URL ]; then	# one URL found
+			break			# exit from outer for cycle
 		fi
 	done
+	# at least the source has to have it
+	if [ ! $URL ]; then
+		URL="$SOURCE_REGISTRY/v2/$IMAGE_REPO/blobs"
+	fi
 
 	echo "fetching layer from: $URL/$DIGEST"
 	curl -sS "$URL/$DIGEST" -o "${DIGEST}_layer.out" \

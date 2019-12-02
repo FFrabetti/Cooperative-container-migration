@@ -27,7 +27,6 @@ else
 			-e REGISTRY_HTTP_ADDR=0.0.0.0:443 \
 			-e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/domain.crt \
 			-e REGISTRY_HTTP_TLS_KEY=/certs/domain.key \
-			-v /home/ubu2admin/registry:/var/lib/registry \
 			--restart=unless-stopped \
 			--name sec_registry \
 			registry:2
@@ -37,7 +36,6 @@ else
 		docker run -d \
 			-p 443:443 \
 			-v "$CERTS":/certs \
-			-v /home/ubu2admin/registry:/var/lib/registry \
 			-v `pwd`/$CONFIG_FILE:/etc/docker/registry/config.yml \
 			--restart=unless-stopped \
 			--name sec_registry \
