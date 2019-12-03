@@ -1,0 +1,31 @@
+version: 0.1
+storage:
+  filesystem:
+    rootdirectory: /var/lib/registry
+  cache:
+    blobdescriptor: inmemory
+http:
+  addr: 0.0.0.0:443
+  headers:
+    X-Content-Type-Options: [nosniff]
+  tls:
+    certificate: /certs/domain.crt
+    key: /certs/domain.key
+log:
+  level: debug
+  fields:
+    service: registry
+    environment: sec_debug
+notifications:
+  events:
+    includereferenes: true
+  endpoints:
+  - name: pylistener
+    url: http://192.168.25.1:8000
+    headers:
+    timeout: 1s
+    threshold: 5
+    backoff: 5s
+    ignore:
+      actions:
+      - pull
