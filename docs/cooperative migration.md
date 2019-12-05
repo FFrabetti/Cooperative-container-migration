@@ -178,9 +178,9 @@ Compared to the previous scenario, in this case there is no overhead related to 
 #### Script ####
 One script takes care of periodic pull cycles and another one of the actual migration process. They are substantially the same as the ones of the [Centralized pull-based approach](#pull-based-approach), this time both to be executed at the destination.
 
-> Because when pushing a manifest to a Registry all its layers have to be already present in the Registry itself, to actually use the mentioned scripts as they are you would need the destination to have all the layers in advance, making the migration to fall back to a trivial scenario (as there would be no new layers to be fetched).
+> Because when pushing a manifest to a Registry all its layers have to already be present in the Registry itself, to actually use the mentioned scripts as they are you would need the destination to have all the layers in advance, making the migration to fall back to a trivial scenario (as there would be no new layers to be fetched).
 
-> This limit can be overcome by introducing a dedicated data structure that keeps track of layers' locations: _the temporary files created by the master's script_ would make the cut, for example (see code below).
+> This limit can be overcome by introducing a dedicated data structure that keeps track of layers' locations, to be used instead of the Registry: _the temporary files created by the master's script_ would make the cut, for example. The code snippets below show how this data structure can be accessed in read (when looking for a layer) and write mode:
 
 ```
 LAYER_FILE="$WORK_DIR/${DIGEST}.txt"
@@ -190,8 +190,53 @@ else
 	URL="$SOURCE_REGISTRY/v2/$IMAGE_REPO/blobs"
 fi
 ```
+(from [this script](../cooperative%20migration/cpull_migr_dest.sh), as the destination may obtain the layer URL from its local filesystem instead of from the master's Registry)
+
+```
+LAYER_FILE="$WORK_DIR/${DIGEST}.txt"
+LINE="$REGISTRY/v2/$IMAGE_REPO/blobs"
+
+if [ ! -f "$LAYER_FILE" ] || ! grep -q "^${LINE}$" "$LAYER_FILE"; then
+	echo "$LINE" >> "$LAYER_FILE"
+fi
+```
+(from [this script](../cooperative%20migration/cpull_migr_master.sh), with minor changes)
 
 ## Off-line Push ##
-The alternative for the destination is to listen to events emitted by its neighbors, so to have a local knowledge of their layers always updated. Similarly to the [Centralized push-based approach](#push-based-approach), periodic updates are also sent even when there are no changes to the node's Registry.
+To avoid the overhead of performing an on-line scan of its neighbors while not giving up on the benefit of having fresh data, the alternative for the destination is to listen to events emitted by neighboring nodes, so to have a local knowledge of their layers always updated. Similarly to the [Centralized push-based approach](#push-based-approach), periodic updates are also sent even when there are no changes to the node's Registry.
 
-No overhead (off-line) and fresh data, but it may require an event broker to handle all notifications.
+This approach suffers the same problem described above about the Registry having to manage all layers in advance; additionally, the fact that notification endpoints must be statically defined in the configuration file prior to the Registry execution makes nodes set up complicated and the entire system unable to cope with changes in the network topology.
+
+A common design pattern for such scenarios is introducing a third entity to de-couple the emission of notification messages from their potential targets. This is done with the help of an **event broker** that follows a publish/subscribe delivery method: each node publishes notifications to a specific topic in a known endpoint, the broker, which in turns notifies all the previously subscribed nodes.
+
+The broker may have a separate topic for each neighborhood or even a dedicated one for every node: an edge node can then subscribe to one or multiple "neighborhoods" or to the topics of all its neighbors. The former case requires to publish, in general, the same event to multiple topics (as a node can belong to many neighborhoods), while the latter has the downside of requiring subscribers to know the logical name associated with the topic of all their neighbors.
+
+#### Script ####
+We detail here how the [Centralized push-based approach](#push-based-approach) example can be extended to include an event broker. To keep things simple, we consider that:
+- periodic updates are sent in the form of JSON events, the same used for Registry notifications
+- the Registry in execution on a subscriber node can deal with information about layers it does not already manage
+
+For the broker is chosen [_Eclipse Mosquitto_](https://mosquitto.org/), an open-source MQTT message broker. It must be running on a (master) node within the cluster:
+```
+docker run -d -p 1883:1883 -p 9001:9001 eclipse-mosquitto
+```
+
+on each node, its default clients must be installed (for Ubuntu):
+```
+sudo apt-get install mosquitto-clients
+```
+
+A subscriber must be running on every node, with the task of interfacing with the script that updates the local Registry:
+```
+mosquitto_sub -h BROKER -t TOPIC | update_registry.sh REGISTRY
+```
+
+While an HTTP endpoint (whose IP and `PORT` are set in the Registry configuration file) and a publisher must be executed on the master:
+```
+# publish to localhost one message per line (stdin), with debug output
+python3 notifications_endpoint.py PORT | mosquitto_pub -d -l -t TOPIC
+```
+
+Thanks to the de-coupling present in the architecture of the original example between the HTTP server (in Python) and the script that implements the Registry update logic (in bash), nothing else needs to be changed.
+
+> At default, the least QoS level (0) is used, which means that messages are delivered without acks or retransmissions, in favor of lower latency. An optional _retention_ flag can be set for periodic updates to prevent messages already delivered to all subscribers from being immediately discarded: in this way, in case of a new subscription, the broker can send the "last known good" value without having to wait for the next update cycle.
