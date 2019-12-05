@@ -75,7 +75,71 @@ Because events - the information content of which is just an incremental differe
 Ideally, with no event loss and timely delivery, the cluster-level knowledge base is always updated with fresh data.
 
 #### Script ####
-Nothing changes for the destination, but ...
+Nothing changes for the destination, but we have to set things up on all nodes so they start sending notifications and periodic updates to the master. We tackle these two problems separately.
+
+##### Sending notifications #####
+The Registry has its own internal [notification system](https://docs.docker.com/registry/notifications/), which sends _events_ (in the form of JSON objects in the payload of HTTP requests) to a set of pre-defined endpoints specified in the configuration yaml file. Each event refers to an operation (_request_) performed on the Registry to a specific _target_ resource, mainly a layer or a manifest.
+
+With [minimal configuration](../various/config/config_notify_1_8000.yml) we set each node's Registry to send notifications to an endpoint (`ENDPOINT:PORT`) running on the master:
+```
+notifications:
+  events:
+    includereferenes: true
+  endpoints:
+  - name: pylistener
+    url: ENDPOINT:PORT
+    headers:
+    timeout: 1s
+    threshold: 5
+    backoff: 5s
+    ignore:
+      actions:
+      - pull
+```
+Note that we ignore _pull_ actions, as they do not change the status of the Registry.
+
+On the master side, a HTTP endpoint has to be running at the specified port, parse the received events and update the master's own Registry accordingly. We implemented the [HTTP server](../cooperative%20migration/notifications_endpoint.py) and the JSON parsing (both for events and [image manifests](../cooperative%20migration/update_manifest.py)) in Python, while a simple [bash script](../cooperative%20migration/update_registry.sh) takes care of updating the Registry.
+
+To be executed at the master:
+```
+python3 notifications_endpoint.py PORT | update_registry.sh MASTER_REGISTRY
+```
+
+##### Sending periodic updates #####
+The simplest way of sending periodic updates is by turning them into the same event format used by the Registry, so we can re-use the same endpoint and update logic.
+
+This is done in [this script](../cooperative%20migration/periodic_push.sh), which accepts as parameters the local Registry to get the information from, the update period, in seconds, and a list of endpoints to notify.
+For each manifest and for each layer in it, a "fake" _push_ event is generated and sent to all endpoints with the layer's digest, repository and full URL.
+
+> Please note that a smarter, distributed version of the script could also transmit the information about other nodes it has notion of, by attaching the content of the `urls` field present for each layer in the local Registry. Additionally, one could think of propagating the information to the endpoints obtained from the `urls` array itself.
+
+An obvious problem with this solution is about the fact that, by design, these "fake" events would always come in batches, while the endpoint, as it is, works for single events, i.e. it performs a full scan of the local Registry and updates it _for every event_.
+An optimized version, on the other hand, could examine a batch of events and, for each batch:
+1. Scan the locally present manifests
+2. For each layer, if present in the batch, update its `urls` array
+3. Push the updated manifest back to the Registry
+
+This is done by these [Python](../cooperative%20migration/endpoint_rev_table.py) and [bash](../cooperative%20migration/update_registry_rev_table.sh) scripts.
+```
+endpoint_rev_table.py PORT | update_registry_rev_table.sh MASTER_REGISTRY
+```
+
+A dedicated HTTP server is ready to receive a summary of the content of a node's Registry (again in JSON format), with one entry for each layer containing its digest and a list of URLs (comprising the layer's location in the Registry and the content of the `urls` field).
+```
+{ "layers": [
+	{
+		"digest": "...",
+		"urls": [ "...", ... ]
+	},
+	...
+] }
+```
+
+Finally, a [script](../cooperative%20migration/periodic_push_rev_table.sh) (similar to the one of the simpler version and with the same parameters) running on each node has to periodically send the `layers` JSON structure, which, if compared to how the same information is stored in the Registry, can be seen as a sort of **inverse table**: given a layer's digest, tell me where to find it (URL with node/Registry IP, repository, etc.).
+
+> A Registry normally works the other way around, as it is interrogated knowing the repository and the resource digest (besides the Registry location). This is why a common pattern in many of the scripts presented in this section is a full scan of the repositories, manifests and layers managed by a Registry.
+
+Note that the script, for simplicity reasons, does not "compact" the list to avoid duplicates, so there may as well be multiple entries for a single layer. Replicated values, however, are been taken care of at the receiver side.
 
 ## Destination-side Pull ##
 If we get rid of ClusterKB, the destination itself may pull the list of layers its neighbors have. This can be done either **on-line**, when the migration request is issued, or **off-line**, by periodically querying them.
