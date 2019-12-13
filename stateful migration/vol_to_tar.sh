@@ -11,7 +11,8 @@ count=0
 while read volname volpath; do
 	if [[ $volname ]] && [[ $volpath ]]; then 	# no empty lines
 		echo "$volname in $volpath" 	# debug
-		tar cvf $BACKUP_DIR/$volname.tar $volpath && count=$((count+1))
+		tar -cPvf "$BACKUP_DIR"/$volname.tar $volpath && count=$((count+1))
+		# -P 	don't strip leading / from file names
 	fi
 done
 
