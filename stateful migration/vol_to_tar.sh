@@ -8,7 +8,7 @@ if [ $# -eq 1 ]; then
 fi
 
 count=0
-while read volname volpath; do
+while read volname volpath rest; do
 	if [[ $volname ]] && [[ $volpath ]]; then 	# no empty lines
 		echo "$volname in $volpath" 	# debug
 		tar -cPvf "$BACKUP_DIR"/$volname.tar $volpath && count=$((count+1))
