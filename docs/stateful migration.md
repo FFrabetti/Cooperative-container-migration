@@ -1,11 +1,87 @@
 # Stateful migration #
+In some cases, starting a new container at the destination from the same base image is not enough to migrate a service. From a logical point of view, it is not the end user that is simply pointing to a different node (the destination) providing the same service with lower latency, but it is the very same logical service "instance" that is _migrated_ from one node to the other.
 
-We assume the data that needs to be migrated together with a container is only stored in:
+Migration should therefore keep into account _service state_, which can be classified into:
+- Application state: common to all users
+- Session state: relative to a particular user (multiple service requests as part of the same _conversation_)
+- Request state: information limited to a single request
+
+We start from the consideration that service state can either be kept in memory (RAM) or in a storage medium. From the [options available in Docker](https://docs.docker.com/storage/), we assume the data that needs to be migrated together with a container is only stored in:
 - **[The Container layer](#migrating-a-container-layer)**
 - **[Volumes](#migrating-volumes)**
 - **[RAM](#migrating-running-state-ram)**, for volatile information
 
+After that, before [putting all pieces together](#TODO_script), we detail the possible cases of stateful migration:
+- **[Stateful container migration](#TODO_stateful-container-migration)** (application, session, request)
+- **[User-service session migration](#TODO_user-service-session-migration)** (session, request)
+- **[User-service stateful migration](#TODO_user-service-stateful-migration)** (request)
+
+Which complement the [stateless migration scenario](traditional%20migration.md), not considering service state whatsoever.
+
+Finally, we try to perform stateful migration in a [cooperative way](#TODO).
+
 ## Migrating a Container layer ##
+The Container layer is the only writable layer at the top of stack of layers the container image is made of (more details [here](https://docs.docker.com/storage/storagedriver/)). It is important to notice that _it is not the recommended way of storing information within a container_, mainly because its lifespan is the same of the container itself (and containers are ephemeral entities), and because it suffers the performance issues of the Docker union file system.
+
+Because of this, we expect applications to write to the Container layer just temporary files, like cached objects or support files to otherwise memory-intensive operations, or anyway accessory files not vital to the service, possibly related to cross-cutting concerns like logging.
+
+In this scenario, one may say that the Container layer should **not** be migrated in the first place; the container image, in fact, should contain all the information needed for the service to work.
+Despite this will be the case of many applications, we try to address the problem of migrating it for those cases in which preserving the Container layer content across migrations is required.
+
+### docker commit ###
+One option is to use [`docker commit`](https://docs.docker.com/engine/reference/commandline/commit/) to create a new image from the migrating container, complete of the changes written in the Container layer "committed" into a read-only layer at the top of the newly formed image. Migrating it to the destination, at this point, is no different from a stateless migration.
+
+The downside of this approach is that, when a new container is started at the destination, an additional writable layer is created for future changes. The net result is that, after N migrations, there would be N different images, each of which with an increasing number of layers.
+
+To tame this growth, [layers squashing](https://docs.docker.com/engine/reference/commandline/build/#squash-an-images-layers---squash-experimental) could be used: not so much with the provided `docker build --squash` flag (which generates a single-layer-image from a container image), but with some other tool or hack that merges, after each `commit`, the layers on top of the original container image. Still, after N migrations there would be around N images beside the original one.
+
+### docker export/import ###
+These two commands allow you to [export](https://docs.docker.com/engine/reference/commandline/export/)/[import](https://docs.docker.com/engine/reference/commandline/import/) a container file system to/from a tar archive.
+
+Differently from `docker save` and `load`, which would pack up all container metadata but disregard the Container layer, with `export` just the container file system is extracted, exactly as it is seen from within the container itself. As a result, all layers are flattened out in a unified tree structure.
+
+It is immediately obvious how this would compromise the whole idea of exploiting layers already present at the destination, or those otherwise available from neighboring nodes.
+
+### docker diff ###
+In addition to the solutions mentioned above, one could write its own hack and inspect, backup and, symmetrically, extract at the destination the content of the Container layer by accessing it from the host file system (somewhere in `/var/lib/docker/<storage-driver>`).
+
+The proposed solution somehow follows this idea, but it tries to exploit available Docker commands and to keep things as portable and simple as possible.
+
+One neat way to access the Container layer is through [`docker diff`](https://docs.docker.com/engine/reference/commandline/diff/): we read from the documentation that it gives us one like for each change recorded in the writable layer, with:
+- `A` for added files
+- `C` for changed files
+- `D` for deleted files
+
+Because we are relying on a union file system, added or changed files have, in fact, to be present in the target Container layer, shadowing or not pre-existing versions from the underlying layers. For deleted files and directories, we know that the implementation is somehow similar to `C` but with special place-holders (in the sense that we are _adding_ special files to shadow others with the same name), but we don't want to deal with them directly.
+
+For `A` and `C` files, we can simply copy them into an archive, transfer it to the destination and extract it within the target container (at default, write operations are made to the Container layer).
+
+```
+docker diff $CONTAINER | while read type path; do
+	if [ $type = "A" ] || [ $type = "C" ]; then
+		echo $path
+	fi
+done | docker exec -i $CONTAINER bash -c 'tar cPv -T -' > "$TAR_FILE"
+```
+A revisited version can be found [here](../stateful%20migration/cont_layer_backup.sh), dealing also with mounted volumes and with new and "changed" directories.
+
+At the destination, after getting the archive via `scp`, we have to extract it:
+
+```
+docker exec -i $CONTAINER bash -c 'tar xPvf - -C /' < "$TAR_FILE"
+```
+
+Deleted files and directories don't have to be transferred and we just need their full path so we can delete them in the target container as well:
+
+```
+ssh $SOURCE "docker diff $SRC_CONTAINER" | while read type path; do
+	if [ "$type" = "D" ]; then
+		echo $path
+	fi
+done | docker exec -i $CONTAINER bash -c 'while read line; do rm -rv "$line"; done'
+```
+
+See [full script](../stateful%20migration/cont_layer_dest.sh).
 
 ## Migrating volumes ##
 With volume migration we mean creating a _new volume_ at the destination with the exact same content of the original one; it will then be mounted into the target container in the same way and with the same configuration options of the original one (read/write or read-only mode, etc.).
@@ -242,3 +318,4 @@ docker volume prune
 
 
 ## Migrating running state (RAM) ##
+

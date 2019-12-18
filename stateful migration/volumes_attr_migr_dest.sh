@@ -80,6 +80,8 @@ CONT_ID_RO=$(docker run -d \
 
 # TODO: wait for termination of CONT_ID and CONT_ID_RO
 # 		or remove -d and get their names/IDs
+# https://docs.docker.com/engine/reference/commandline/container_wait/
+# docker container wait CONTAINER [CONTAINER...]
 
 # 5. Mount the volumes into the target container
 docker run -d \
