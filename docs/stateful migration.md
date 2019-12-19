@@ -1,4 +1,4 @@
-# Stateful migration #
+# Stateful migration: migrating service state #
 In some cases, starting a new container at the destination from the same base image is not enough to migrate a service. From a logical point of view, it is not the end user that is simply pointing to a different node (the destination) providing the same service with lower latency, but it is the very same logical service "instance" that is _migrated_ from one node to the other.
 
 Migration should therefore keep into account _service state_, which can be classified into:
@@ -11,14 +11,7 @@ We start from the consideration that service state can either be kept in memory 
 - **[Volumes](#migrating-volumes)**
 - **[RAM](#migrating-running-state-ram)**, for volatile information
 
-After that, before [putting all pieces together](#TODO_script), we detail the possible cases of stateful migration:
-- **[Stateful container migration](#TODO_stateful-container-migration)** (application, session, request)
-- **[User-service session migration](#TODO_user-service-session-migration)** (session, request)
-- **[User-service stateful migration](#TODO_user-service-stateful-migration)** (request)
-
-Which complement the [stateless migration scenario](traditional%20migration.md), not considering service state whatsoever.
-
-Finally, we try to perform stateful migration in a [cooperative way](#TODO).
+This page focuses on how these problems can be solved separately, from the point of view of a single cluster service based on Docker containers. Please refer to [this document](cooperative%20stateful%20migration.md) for the details about all possible cases of stateful migration and for the explanation of a script that puts all pieces together.
 
 ## Migrating a Container layer ##
 The Container layer is the only writable layer at the top of stack of layers the container image is made of (more details [here](https://docs.docker.com/storage/storagedriver/)). It is important to notice that _it is not the recommended way of storing information within a container_, mainly because its lifespan is the same of the container itself (and containers are ephemeral entities), and because it suffers the performance issues of the Docker union file system.
