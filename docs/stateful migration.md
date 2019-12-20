@@ -312,3 +312,115 @@ docker volume prune
 
 ## Migrating running state (RAM) ##
 
+### Using an external tool ###
+The first idea, when facing the issue of migrating pieces of information that are kept in RAM, is exploiting existing in-memory data structure stores like [Redis](https://redis.io/).
+
+Let's imagine that each node relies on a local Redis instance running in its own container:
+```
+docker run -d -p 6379:6379 --name myredis redis
+```
+
+A simple toy application can read/write information using arbitrary (unique) keys:
+```
+(
+	echo "set foo bar"
+	echo "incr mycounter"
+	echo "get foo"
+	echo "get mycounter"
+) | docker run -i --rm --link myredis:redis --name redis-cli \
+	redis redis-cli -h redis
+```
+
+Migrating some key-value pairs (in this case `foo` and `mycounter`) can then be done with the [MIGRATE](https://redis.io/commands/migrate) command:
+```
+docker run --rm --link myredis:redis --name redis-cli \
+	redis redis-cli -h redis \
+	MIGRATE $DESTINATION 6379 "" 0 5000 COPY REPLACE KEYS foo mycounter
+```
+
+Finally, we can check that the Redis instance at the destination has now a copy of the information:
+```
+(
+	echo "get foo"
+	echo "get mycounter"
+) | docker run -i --rm --name redis-cli \
+	redis redis-cli -h $DESTINATION
+```
+
+#### Off-line replication with Redis Cluster ####
+Instead of migrating data on-demand from one Redis instance to the other, we could:
+- Share the same Redis server within the same cluster
+
+  The advantage is having data always available regardless of service location, but with higher access latency as it would be, in general, located in a different node as compared to being kept in local memory.
+- Perform off-line synchronization among different Redis instances, ideally one for each node
+
+  Whenever a service/container performs a write operation to its local Redis server (running on the same node), the update is automatically propagated to all other servers so that, after a synchronization period, all replicas have the same information. At migration time nothing happens, as the migrating container will find at the destination a local copy of all the data it needs.
+
+Note that a hybrid approach is also possible, with a number of Redis clones that does not exactly match the number of nodes in the cluster. On average, with the right load-balancing mechanism and routing rules, each container would send commands to the "closest" Redis instance, thus reducing the average access latency mentioned for the first centralized scenario.
+
+> Having multiple Redis instances does not just improve average access latency, but it also provides higher availability in case of failures (of both service containers and Redis servers).
+
+> The number of Redis instances can also be greater than the number of nodes, for higher availability and scalability (see [presharding](https://redis.io/topics/partitioning))
+
+We see here how to configure our cluster to work with Redis replication in the simple case of one instance/replica per node. More complex scenarios are possible, for example by introducing [Redis Cluster](https://redis.io/topics/cluster-spec) or [Redis Sentinel](https://redis.io/topics/sentinel).
+
+For the master:
+```
+docker run -d -p 6379:6379 --name redis-master redis
+```
+
+For the slaves (at each node):
+```
+docker run -d -p 6379:6379 --name redis-slave redis \
+	redis-server --slaveof MASTER_HOST MASTER_PORT
+```
+In this case `MASTER_PORT` would be `6379`.
+
+Because slaves are read-only, clients should take care of performing write operations to the master.
+This is just an example of a simple proxy on top of the standard `redis-cli`:
+```
+while read line; do
+	if [ "$line" ]; then
+		if [[ "$line" = "get"* ]]; then
+			redis-cli -h "$SLAVE_HOST" -p $SLAVE_PORT $line
+		else
+			redis-cli -h "$MASTER_HOST" -p $MASTER_PORT $line
+		fi
+	else
+		echo "exit"
+		break
+	fi
+done
+```
+full script [here](../stateful%20migration/redis-pro.sh).
+
+With Redis Cluster, replicas would tell the client where to find the master managing a given key, so the same proxy would be simplified to:
+```
+while read line; do
+	if [ "$line" ]; then
+		if [[ "$line" = "get"* ]]; then
+			(echo "readonly"; echo $line) | redis-cli -h "$HOST" -p $PORT
+		else
+			# using cluster mode (follow redirections)
+			redis-cli -h "$HOST" -p $PORT -c $line
+		fi
+	else
+		echo "exit"
+		break
+	fi
+done
+```
+full script [here](../stateful%20migration/redis-pro-c.sh).
+
+<br/>
+At the end, you can stop and remove the Redis containers running in background in each node:
+
+```
+docker container rm -f REDIS_CONTAINER
+```
+
+
+The problem with this approach is that it forces application developers to use Redis (in this case) or others similar tools and, as a consequence, migrating data becomes strongly dependent on the chosen external storage system.
+The same consideration made for databases applies to this scenario as well: an application that migrates containers should not focus on external services the container relies upon, as it is a case-by-case problem on its own.
+
+### CRIU: Checkpoint/Restore In Userspace ###
