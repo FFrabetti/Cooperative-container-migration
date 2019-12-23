@@ -424,3 +424,83 @@ The problem with this approach is that it forces application developers to use R
 The same consideration made for databases applies to this scenario as well: an application that migrates containers should not focus on external services the container relies upon, as it is a case-by-case problem on its own.
 
 ### CRIU: Checkpoint/Restore In Userspace ###
+A running Docker container can be checkpointed and later restored using [CRIU](https://criu.org/Main_Page), as it is explained [here](https://github.com/docker/cli/blob/master/experimental/checkpoint-restore.md).
+
+First we need to install CRIU. On Ubuntu this can be done with:
+```
+sudo apt-get install criu
+```
+(I'm using version 2.6)
+
+To check [kernel compatibility](https://criu.org/Installation#Checking_That_It_Works):
+```
+sudo criu check
+```
+
+As for now, the most updated stable version of Docker for what concerns Checkpoint/Restore is [19.03.0](https://docs.docker.com/engine/release-notes/#19030).
+```
+sudo apt-get install docker-ce=5:19.03.0~3-0~ubuntu-xenial
+```
+In general, because of some [reported issues](https://github.com/moby/moby/issues/35691#issuecomment-480350129), it is a good idea to use a version higher than 18.10 (check the output of `docker version`).
+
+We then have to enable experimental features and restart the Docker daemon in order to use [`docker checkpoint` commands](https://docs.docker.com/engine/reference/commandline/checkpoint/).
+
+#### Example ####
+In this simple example we are going to:
+1. Run a container
+2. Create a checkpoint from it
+3. Transfer the checkpoint to a different node (tar archive + `scp`)
+4. Start a new container from that checkpoint
+
+We are loosely following what is reported in [this page](https://criu.org/Docker).
+
+```
+docker run -d --name looper busybox \
+	/bin/sh -c 'echo "This is the container to be checkpointed" > msg; i=0; while true; do echo $i; i=$((i+1)); cat msg; sleep 1; done'
+```
+If everything goes well you should be able to see the output printed in `docker logs looper`.
+
+To create a checkpoint called `cp1` and save it under `/tmp`:
+```
+docker checkpoint create looper cp1 --checkpoint-dir=/tmp
+```
+The `looper` container is automatically stopped, therefore it should not be present in `docker container ls`. To change this behavior you can add the flag `--leave-running`.
+
+Create the archive:
+```
+cd /tmp
+sudo tar cv cp1 > $HOME/looper.cp1.tar
+```
+
+At the destination, we create the "same" container (without starting it yet):
+```
+docker container create --name looper-clone busybox \
+	/bin/sh -c '...'
+```
+
+Then, after `scp`, we can extract the archive:
+```
+sudo tar xvf looper.cp1.tar -C /var/lib/docker/containers/$(docker ps -aq --no-trunc --filter name=looper-clone)/checkpoints
+```
+Note that we are extracting it directly into a folder managed by Docker. This is necessary because custom checkpoint directories are not supported by `docker start`. More details [here](https://github.com/moby/moby/issues/37344#issuecomment-450782189).
+
+The final step is starting the container from the checkpoint:
+```
+docker start --checkpoint=cp1 looper-clone
+```
+
+By checking its output (`docker logs looper-clone`), we should see the counting starting from when it has been interrupted at the source. Also, because the file `msg` is not present (it has **not** been copied from the source container writable layer), an error message is displayed.
+
+Steps 2 and 4 can also be done by running these scripts:
+```
+docker run --name looper ...
+criu_checkpoint.sh looper cp1 checkpts
+```
+([criu_checkpoint.sh](../stateful%20migration/criu_checkpoint.sh))
+
+```
+docker create --name looper-clone ...
+scp SOURCE:checkpts/looper.cp1.tar looper.cp1.tar
+criu_restore.sh looper-clone cp1 < looper.cp1.tar
+```
+([criu_restore.sh](../stateful%20migration/criu_restore.sh))
