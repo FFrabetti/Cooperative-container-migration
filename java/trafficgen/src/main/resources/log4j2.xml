@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+    <Appenders>
+    	<!--
+    	%-5level
+    	The priority of the logging event should be left justified to a width of five characters.
+    	 
+    	logger{precision}
+    	When the precision specifier is a positive integer, print the corresponding number of rightmost logger name components.
+    	
+    	nano
+    	Outputs the result of System.nanoTime() at the time the log event was created.
+    	 -->
+        <Console name="LogToConsole" target="SYSTEM_OUT">
+            <PatternLayout>
+            	<Pattern>%d{COMPACT} %-5level %logger{6} - %m%n</Pattern>
+            </PatternLayout>
+        </Console>
+        <File name="LogToFileInt" fileName="logs/interactive.log">
+            <PatternLayout>
+                <Pattern>%d %nano %-5level %logger{6} - %m%n</Pattern>
+            </PatternLayout>
+        </File>
+        <File name="LogToFileConv" fileName="logs/conversational.log">
+            <PatternLayout>
+                <Pattern>%d %nano %-5level %logger{6} - %m%n</Pattern>
+            </PatternLayout>
+        </File>
+        <File name="LogToFileBack" fileName="logs/background.log">
+            <PatternLayout>
+                <Pattern>%d %nano %-5level %logger{6} - %m%n</Pattern>
+            </PatternLayout>
+        </File>
+        <File name="LogToFileStr" fileName="logs/streaming.log">
+            <PatternLayout>
+                <Pattern>%d %nano %-5level %logger{6} - %m%n</Pattern>
+            </PatternLayout>
+        </File>
+    </Appenders>
+    <Loggers>
+        <Logger name="it.unibo.ff185.trafficgen.interactive" level="debug" additivity="false">
+            <AppenderRef ref="LogToFileInt"/>
+            <AppenderRef ref="LogToConsole"/>
+        </Logger>
+        <Logger name="it.unibo.ff185.trafficgen.conversational" level="debug" additivity="false">
+            <AppenderRef ref="LogToFileConv"/>
+            <AppenderRef ref="LogToConsole"/>
+        </Logger>
+        <Logger name="it.unibo.ff185.trafficgen.background" level="debug" additivity="false">
+            <AppenderRef ref="LogToFileBack"/>
+            <AppenderRef ref="LogToConsole"/>
+        </Logger>
+        <Logger name="it.unibo.ff185.trafficgen.streaming" level="debug" additivity="false">
+            <AppenderRef ref="LogToFileStr"/>
+            <AppenderRef ref="LogToConsole"/>
+        </Logger>
+        <Root level="error">
+            <AppenderRef ref="LogToConsole"/>
+        </Root>
+    </Loggers>
+</Configuration>
