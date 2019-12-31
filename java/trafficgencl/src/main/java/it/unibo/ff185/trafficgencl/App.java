@@ -1,5 +1,6 @@
 package it.unibo.ff185.trafficgencl;
 
+import it.unibo.ff185.trafficgencl.conversational.ConversationalClient;
 import it.unibo.ff185.trafficgencl.interactive.InteractiveClient;
 
 public class App {
@@ -16,7 +17,7 @@ public class App {
 			InteractiveClient.run(args);
 			break;
 		case "conversational":
-			
+			ConversationalClient.run(args);
 			break;
 		case "background":
 			

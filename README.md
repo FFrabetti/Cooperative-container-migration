@@ -12,3 +12,5 @@ Research conducted at Winlab, Rutgers University (NJ, USA).
     - [Cooperative migration](docs/cooperative%20migration.md)
   - [Stateful](docs/stateful%20migration.md)
     - [Cooperative stateful migration](docs/cooperative%20stateful%20migration.md)
+
+- [Test application](docs/trafficgen.md)
