@@ -1,4 +1,4 @@
-package it.unibo.ff185.trafficgencl.conversational;
+package it.unibo.ff185.trafficgencl;
 
 import javax.websocket.ClientEndpoint;
 import javax.websocket.CloseReason;
@@ -39,6 +39,12 @@ public class WebSocketClientEndpoint {
 	@OnMessage
 	public void OnMessage(Session session, String msg) {
 		logger.info(logMsg("Message received: " + msg, session));
+	}
+	
+	@OnMessage
+	public void OnMessage(Session session, byte[] byteArray, boolean isLast) {
+		logger.info(logMsg("Partial message received" +
+				(isLast ? " (last): " : ": ") + byteArray.length + " bytes", session));
 	}
 	
 }

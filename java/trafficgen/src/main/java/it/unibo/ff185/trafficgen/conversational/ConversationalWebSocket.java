@@ -1,5 +1,6 @@
 package it.unibo.ff185.trafficgen.conversational;
 
+import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
@@ -18,61 +19,78 @@ import org.apache.logging.log4j.Logger;
 
 @ServerEndpoint("/conversational/{max-period}")
 public class ConversationalWebSocket {
+
+	protected static final String MAX_PERIOD = "max-period";
+	protected static final String THREAD = "thread";
+	protected static final String QUEUE = "queue";
 	
-	private static final String THREAD = "thread";
-	private static final String QUEUE = "queue";
 	private static final int QUEUE_CAPACITY = 16;
 
 	private static final Logger logger = LogManager.getLogger();
 	
-	private String logMsg(String msg, Session session) {
-		return "(" + session.getId() + ") " + msg;
+	protected Logger getLogger() {
+		return ConversationalWebSocket.logger;
+	}
+	
+	@SuppressWarnings("unchecked")
+	protected Thread newPeriodicSenderThread(Session session) {
+		return new RandPeriodEchoThread(
+				(Integer)session.getUserProperties().get(MAX_PERIOD),
+				session.getBasicRemote(),
+				(BlockingQueue<String>)session.getUserProperties().get(QUEUE)
+		);
 	}
 	
 	@OnOpen
 	public void OnOpen(Session session, EndpointConfig config, @PathParam("max-period") int maxPeriod) {
-		logger.debug(logMsg("Open websocket with maxPeriod=" + maxPeriod, session));
+		getLogger().debug(logMsg("Open websocket with maxPeriod=" + maxPeriod, session));
 		
 		if(maxPeriod > 0) {
-			BlockingQueue<String> queue = new ArrayBlockingQueue<>(QUEUE_CAPACITY);
-			Thread thread = new RandPeriodEchoThread(maxPeriod, session.getBasicRemote(), queue);
-			thread.start();
+			Map<String,Object> properties = session.getUserProperties();
+			properties.put(MAX_PERIOD, maxPeriod);
 			
-			session.getUserProperties().put(QUEUE, queue);
-			session.getUserProperties().put(THREAD, thread);
+			properties.put(QUEUE, new ArrayBlockingQueue<String>(QUEUE_CAPACITY));
+			
+			Thread thread = newPeriodicSenderThread(session);
+			thread.start();
+			properties.put(THREAD, thread);
 		}
 		else
-			logger.warn(logMsg("maxPeriod is not positive", session));
+			getLogger().warn(logMsg("maxPeriod is not positive", session));
 	}
 	
 	@OnClose
 	public void OnClose(Session session, CloseReason reason) {
-		logger.debug(logMsg("Close: " + reason.getReasonPhrase() + " (" + reason.getCloseCode() + ")", session));
+		getLogger().debug(logMsg("Close: " + reason.getReasonPhrase() + " (" + reason.getCloseCode() + ")", session));
 		terminateThread(session);
 	}
 	
 	@OnError
 	public void OnError(Session session, Throwable err) {
-		logger.error(logMsg("Error: " + err.getMessage(), session));
+		getLogger().error(logMsg("Error: " + err.getMessage(), session));
 		terminateThread(session);
 	}
 	
 	@OnMessage
 	public void OnMessage(Session session, String msg) {
-		logger.info(logMsg("Message received: " + msg, session));
+		getLogger().info(logMsg("Message received: " + msg, session));
 		
 		@SuppressWarnings("unchecked")
 		BlockingQueue<String> queue = (BlockingQueue<String>)session.getUserProperties().get(QUEUE);
 		if(queue != null) {
 			boolean queued = queue.offer(msg); // false if queue is full
-			logger.debug(logMsg("Queuing message result=" + queued, session));
+			getLogger().debug(logMsg("Queuing message result=" + queued, session));
 		}
 	}
 
+	private String logMsg(String msg, Session session) {
+		return "(" + session.getId() + ") " + msg;
+	}
+	
 	private void terminateThread(Session session) {
 		Thread thread = (Thread)session.getUserProperties().get(THREAD);
 		if(thread != null && thread.isAlive()) {
-			logger.debug(logMsg("Interrupting thread=" + thread.getName(), session));
+			getLogger().debug(logMsg("Interrupting thread=" + thread.getName(), session));
 			thread.interrupt();
 		}
 	}

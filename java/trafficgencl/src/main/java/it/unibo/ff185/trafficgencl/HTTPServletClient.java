@@ -1,4 +1,4 @@
-package it.unibo.ff185.trafficgencl.interactive;
+package it.unibo.ff185.trafficgencl;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -14,7 +14,7 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class InteractiveClient {
+public class HTTPServletClient {
 	
 	private static final Logger logger = LogManager.getLogger();
 

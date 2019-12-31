@@ -16,42 +16,15 @@
             	<Pattern>%d{COMPACT} %-5level %logger{6} - %m%n</Pattern>
             </PatternLayout>
         </Console>
-        <File name="LogToFileInt" fileName="logs/interactive.log">
-            <PatternLayout>
-                <Pattern>%d %nano %-5level %logger{6} - %m%n</Pattern>
-            </PatternLayout>
-        </File>
-        <File name="LogToFileConv" fileName="logs/conversational.log">
-            <PatternLayout>
-                <Pattern>%d %nano %-5level %logger{6} - %m%n</Pattern>
-            </PatternLayout>
-        </File>
-        <File name="LogToFileBack" fileName="logs/background.log">
-            <PatternLayout>
-                <Pattern>%d %nano %-5level %logger{6} - %m%n</Pattern>
-            </PatternLayout>
-        </File>
-        <File name="LogToFileStr" fileName="logs/streaming.log">
+        <File name="LogToFile" fileName="logs/trafficgencl.log">
             <PatternLayout>
                 <Pattern>%d %nano %-5level %logger{6} - %m%n</Pattern>
             </PatternLayout>
         </File>
     </Appenders>
     <Loggers>
-        <Logger name="it.unibo.ff185.trafficgencl.interactive" level="debug" additivity="false">
-            <AppenderRef ref="LogToFileInt"/>
-            <AppenderRef ref="LogToConsole"/>
-        </Logger>
-        <Logger name="it.unibo.ff185.trafficgencl.conversational" level="debug" additivity="false">
-            <AppenderRef ref="LogToFileConv"/>
-            <AppenderRef ref="LogToConsole"/>
-        </Logger>
-        <Logger name="it.unibo.ff185.trafficgencl.background" level="debug" additivity="false">
-            <AppenderRef ref="LogToFileBack"/>
-            <AppenderRef ref="LogToConsole"/>
-        </Logger>
-        <Logger name="it.unibo.ff185.trafficgencl.streaming" level="debug" additivity="false">
-            <AppenderRef ref="LogToFileStr"/>
+        <Logger name="it.unibo.ff185.trafficgencl" level="debug" additivity="false">
+            <AppenderRef ref="LogToFile"/>
             <AppenderRef ref="LogToConsole"/>
         </Logger>
         <Root level="error">

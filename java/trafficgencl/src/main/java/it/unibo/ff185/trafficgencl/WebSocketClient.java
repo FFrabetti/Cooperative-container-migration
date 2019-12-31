@@ -1,4 +1,4 @@
-package it.unibo.ff185.trafficgencl.conversational;
+package it.unibo.ff185.trafficgencl;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -11,7 +11,7 @@ import javax.websocket.WebSocketContainer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class ConversationalClient {
+public class WebSocketClient {
 
 	private static final Logger logger = LogManager.getLogger();
 	

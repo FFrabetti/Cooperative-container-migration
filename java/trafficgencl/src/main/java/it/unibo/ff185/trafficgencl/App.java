@@ -1,8 +1,5 @@
 package it.unibo.ff185.trafficgencl;
 
-import it.unibo.ff185.trafficgencl.conversational.ConversationalClient;
-import it.unibo.ff185.trafficgencl.interactive.InteractiveClient;
-
 public class App {
 	
 	public static void main(String[] args) {
@@ -14,18 +11,15 @@ public class App {
 		
 		switch(args[0]) {
 		case "interactive":
-			InteractiveClient.run(args);
+			HTTPServletClient.run(args);
 			break;
 		case "conversational":
-			ConversationalClient.run(args);
-			break;
+			// fall down
 		case "background":
-			
-			break;
+			// fall down
 		case "streaming":
-			
+			WebSocketClient.run(args);
 			break;
-			
 		default:
 			System.out.println("Unknown type");
 		}

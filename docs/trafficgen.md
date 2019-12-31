@@ -77,7 +77,11 @@ docker run -it -v /logs:/logs \
 	java -jar trafficgen.jar interactive http://<SRV_ADDR>:8080/trafficgen/interactive
 ```
 
-> The interactive mode reads lines from _stdin_ with space-separated fields/parameters.
+```
+docker run -it -v /logs:/logs \
+	--name trafficgencl trafficgencl:1.0 \
+	java -jar trafficgen.jar conversational ws://<SRV_ADDR>:8080/trafficgen/conversational/5000
+```
 
 ## Interactive ##
 Interactive traffic can easily be realized on top of HTTP request/response mechanism.
@@ -112,5 +116,11 @@ The URL (e.g. `ws://<SRV_ADDR>/trafficgen/conversational/<MAX_PERIOD>`) has a po
 The server simply echoes the client last message with a counter added before it so each message is different. The session state is therefore comprised of the last received message and the current value of the counter (re-started whenever a new client message arrives).
 
 ## Background ##
+For background traffic, the server sends partial "chunks" of configurable size and number. These can be changed at runtime by sending through the client a message in the format:
+```
+N_CHUNKS CHUNK_SIZE
+```
+
+Everything else works as described for conversational traffic.
 
 ## Streaming ##
