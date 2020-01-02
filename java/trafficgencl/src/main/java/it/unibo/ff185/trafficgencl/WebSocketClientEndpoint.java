@@ -15,9 +15,9 @@ import org.apache.logging.log4j.Logger;
 @ClientEndpoint
 public class WebSocketClientEndpoint {
 	
-	private static final Logger logger = LogManager.getLogger();
+	protected static final Logger logger = LogManager.getLogger();
 	
-	private String logMsg(String msg, Session session) {
+	protected String logMsg(String msg, Session session) {
 		return "(" + session.getId() + ") " + msg;
 	}
 	
@@ -39,12 +39,6 @@ public class WebSocketClientEndpoint {
 	@OnMessage
 	public void OnMessage(Session session, String msg) {
 		logger.info(logMsg("Message received: " + msg, session));
-	}
-	
-	@OnMessage
-	public void OnMessage(Session session, byte[] byteArray, boolean isLast) {
-		logger.info(logMsg("Partial message received" +
-				(isLast ? " (last): " : ": ") + byteArray.length + " bytes", session));
 	}
 	
 }

@@ -1,6 +1,4 @@
-package it.unibo.ff185.trafficgen.conversational;
-
-import java.util.concurrent.BlockingQueue;
+package it.unibo.ff185.trafficgen.streaming;
 
 import javax.websocket.CloseReason;
 import javax.websocket.EndpointConfig;
@@ -15,31 +13,30 @@ import javax.websocket.server.ServerEndpoint;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import it.unibo.ff185.trafficgen.utils.ConversationalEndpoint;
+import it.unibo.ff185.trafficgen.utils.WebSocketServerEndpoint;
 
-@ServerEndpoint("/conversational/{max-period}")
-public class ConversationalWebSocket extends ConversationalEndpoint {
+@ServerEndpoint("/streaming/{bytes-per-sec}")
+public class StreamingWebSocket extends WebSocketServerEndpoint {
 
-	private static final Logger logger = LogManager.getLogger();
+	private static final String BYTES_PER_SECOND = "Bps";
 	
+	private static final Logger logger = LogManager.getLogger();
+
 	@Override
 	protected Logger getLogger() {
-		return ConversationalWebSocket.logger;
+		return StreamingWebSocket.logger;
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
 	protected Thread newSenderThread(Session session) {
-		return new RandPeriodEchoThread(
-				(Integer)session.getUserProperties().get(MAX_PERIOD),
-				session.getBasicRemote(),
-				(BlockingQueue<String>)session.getUserProperties().get(QUEUE)
-		);
+		return new RandStreamSendThread((int)session.getUserProperties().get(BYTES_PER_SECOND), session.getBasicRemote());
 	}
 	
 	@OnOpen
-	public void OnOpen(Session session, EndpointConfig config, @PathParam("max-period") int maxPeriod) {
-		super.OnOpen(session, config, maxPeriod);
+	public void OnOpen(Session session, EndpointConfig config, @PathParam("bytes-per-sec") int Bps) {
+		session.getUserProperties().put(BYTES_PER_SECOND, Bps);
+		
+		super.OnOpen(session, config, Bps > 0);
 	}
 	
 	@OnClose
@@ -53,11 +50,12 @@ public class ConversationalWebSocket extends ConversationalEndpoint {
 	public void OnError(Session session, Throwable err) {
 		super.OnError(session, err);
 	}
-	
+
 	@OnMessage
 	@Override
 	public void OnMessage(Session session, String msg) {
 		super.OnMessage(session, msg);
+		terminateThread(session);
 	}
-
+	
 }

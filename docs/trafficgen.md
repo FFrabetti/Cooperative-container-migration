@@ -10,7 +10,7 @@ Additionally, it has to:
 - read/write storage data
 - experience some processing latency
 
-Both client and server applications also have to produce sufficient logs to allow latency measurements over the 4 scenarios described above.
+Client and server applications also have to produce sufficient logs to allow latency measurements over the 4 scenarios described above.
 
 Both applications are written in Java, using Java EE servlets and web sockets. Tomcat is used as application server.
 
@@ -108,15 +108,19 @@ With the assumption of clock synchronization:
 ## Conversational ##
 For this and the following types of traffic, a WebSocket is used as a bidirectional channel between client and server: whenever one of the two has something to send, it writes it in the WebSocket.
 
-Despite exchanged messages can in theory be of various types, to keep things simple we only implement string-based messages. Binary messages of variable size are used in the following sections.
+Despite exchanged messages can be of various types, to keep things simple we only implement string-based messages. Binary messages of variable size are used in the following sections.
 
 The client implementation is similar to the one used for interactive traffic: a message is sent for each line read from standard input.
 The URL (e.g. `ws://<SRV_ADDR>/trafficgen/conversational/<MAX_PERIOD>`) has a positive parameter, `<MAX_PERIOD>`, used by the server to set the upper bound for uniformly distributed values that represent the period (in milliseconds) between two consecutive messages.
 
+E2E latency can be measured by considering the timespan between a message being sent and its reception (need for clock synchronization).
+
+> Messages are sent in synchronous mode, i.e. the sender is blocked until the entire message has been transmitted.
+
 The server simply echoes the client last message with a counter added before it so each message is different. The session state is therefore comprised of the last received message and the current value of the counter (re-started whenever a new client message arrives).
 
 ## Background ##
-For background traffic, the server sends partial "chunks" of configurable size and number. These can be changed at runtime by sending through the client a message in the format:
+For background traffic, the server sends partial binary "chunks" of data of configurable size and number. These can be changed at runtime by sending a message in the format:
 ```
 N_CHUNKS CHUNK_SIZE
 ```
@@ -124,3 +128,8 @@ N_CHUNKS CHUNK_SIZE
 Everything else works as described for conversational traffic.
 
 ## Streaming ##
+In this case, the server endpoint URL requires a parameter that indicates the number of bytes per second it has to send through the WebSocket.
+
+Any message from the client stops the stream.
+
+> When the sender thread running server-side is interrupted, the client input stream closes, causing the termination of the receiving thread client-side.

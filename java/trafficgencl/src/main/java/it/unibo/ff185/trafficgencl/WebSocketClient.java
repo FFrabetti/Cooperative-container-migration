@@ -19,9 +19,15 @@ public class WebSocketClient {
 		String url = args[1];
 		logger.debug("Starting client with URL=" + url);
 
+		Class<?> annotatedClass = WebSocketClientEndpoint.class;
+		if("streaming".equals(args[0]))
+			annotatedClass = StreamClientEndpoint.class;
+		else if("background".equals(args[0]))
+			annotatedClass = BinaryClientEndpoint.class;
+		
 		WebSocketContainer container = ContainerProvider.getWebSocketContainer();
 		try {
-			Session session = container.connectToServer(WebSocketClientEndpoint.class, new URI(url));
+			Session session = container.connectToServer(annotatedClass, new URI(url));
 			
 			try(BufferedReader br = new BufferedReader(new InputStreamReader(System.in))) {
 				String line = null;
