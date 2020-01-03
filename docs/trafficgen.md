@@ -37,6 +37,8 @@ Required libraries are copied into `<PROJECT>/dependency-jars` (included in the 
 > Note that libraries already provided by Tomcat and required at compile time should **not** be included when distributing the server application.
 
 ## Deployment as Docker images ##
+> **Extract the archives in [executable](../executable), or read below.**
+
 In two separate directories copy the archive files (`war` or `jar`) together with `dependency-jars`.
 
 Then create a `Dockerfile` with this content for `trafficgen`:
@@ -62,25 +64,36 @@ where `IMAGE` should be something like `trafficgen` or `trafficgencl` respective
 > The newly created container images may also be pushed to a Registry.
 
 ## Usage ##
-Here are reported some examples of usage of the two applications.
+Here are reported some examples of usage of the two applications. Volumes/Mount points and names are not strictly necessary, but they may be useful in many situations.
 
+#### Server ####
 ```
 docker run -d -p 8080:8080 -v myvol:/usr/local/tomcat/myvol \
 	--name trafficgen trafficgen:1.0
 ```
 
-> Logs can be found within the container in `/usr/local/tomcat/logs` (with the current configuration) or, for the ones sent to the console, by executing `docker logs trafficgen`.
+Log files can be found within the container in `/usr/local/tomcat/logs` (with the current configuration):
+```
+docker cp trafficgen:/usr/local/tomcat/logs/* ./
+
+# or, by accessing the container directly
+docker exec -it trafficgen bash
+cd logs
+```
+
+> For the ones sent to the console: `docker logs trafficgen`.
+
+#### Client ####
+```
+docker run -it -v /logs:/logs \
+	--name trafficgencl trafficgencl:1.0 \
+	java -jar trafficgencl.jar interactive http://<SRV_ADDR>:8080/trafficgen/interactive
+```
 
 ```
 docker run -it -v /logs:/logs \
 	--name trafficgencl trafficgencl:1.0 \
-	java -jar trafficgen.jar interactive http://<SRV_ADDR>:8080/trafficgen/interactive
-```
-
-```
-docker run -it -v /logs:/logs \
-	--name trafficgencl trafficgencl:1.0 \
-	java -jar trafficgen.jar conversational ws://<SRV_ADDR>:8080/trafficgen/conversational/5000
+	java -jar trafficgencl.jar conversational ws://<SRV_ADDR>:8080/trafficgen/conversational/5000
 ```
 
 ## Interactive ##

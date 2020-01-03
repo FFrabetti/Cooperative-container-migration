@@ -1,17 +1,12 @@
 # Stateful migration: migrating service state #
 In some cases, starting a new container at the destination from the same base image is not enough to migrate a service. From a logical point of view, it is not the end user that is simply pointing to a different node (the destination) providing the same service with lower latency, but it is the very same logical service "instance" that is _migrated_ from one node to the other.
 
-Migration should therefore keep into account _service state_, which can be classified into:
-- Application state: common to all users
-- Session state: relative to a particular user (multiple service requests as part of the same _conversation_)
-- Request state: information limited to a single request
-
-We start from the consideration that service state can either be kept in memory (RAM) or in a storage medium. From the [options available in Docker](https://docs.docker.com/storage/), we assume the data that needs to be migrated together with a container is only stored in:
+Service state can either be kept in memory (RAM) or in a storage medium. From the [options available in Docker](https://docs.docker.com/storage/), we assume the data that needs to be migrated together with a container is only stored in:
 - **[The Container layer](#migrating-a-container-layer)**
 - **[Volumes](#migrating-volumes)**
-- **[RAM](#migrating-running-state-ram)**, for volatile information
+- **[RAM](#migrating-running-state-ram)**
 
-This page focuses on how these problems can be solved separately, from the point of view of a single cluster service based on Docker containers. Please refer to [this document](cooperative%20stateful%20migration.md) for the details about all possible cases of stateful migration and for the explanation of a script that puts all pieces together.
+This page focuses on these three cases separately, by considering a single cluster hosting stateful services based on Docker containers. Please refer to [this document](cooperative%20stateful%20migration.md) for the details about how these pieces can be put together to perform (cooperative) stateful migrations.
 
 ## Migrating a Container layer ##
 The Container layer is the only writable layer at the top of stack of layers the container image is made of (more details [here](https://docs.docker.com/storage/storagedriver/)). It is important to notice that _it is not the recommended way of storing information within a container_, mainly because its lifespan is the same of the container itself (and containers are ephemeral entities), and because it suffers the performance issues of the Docker union file system.
@@ -19,7 +14,7 @@ The Container layer is the only writable layer at the top of stack of layers the
 Because of this, we expect applications to write to the Container layer just temporary files, like cached objects or support files to otherwise memory-intensive operations, or anyway accessory files not vital to the service, possibly related to cross-cutting concerns like logging.
 
 In this scenario, one may say that the Container layer should **not** be migrated in the first place; the container image, in fact, should contain all the information needed for the service to work.
-Despite this will be the case of many applications, we try to address the problem of migrating it for those cases in which preserving the Container layer content across migrations is required.
+Despite this will be the case for many applications, we try to address the problem of migrating it for those cases in which preserving the Container layer content across migrations is required.
 
 ### docker commit ###
 One option is to use [`docker commit`](https://docs.docker.com/engine/reference/commandline/commit/) to create a new image from the migrating container, complete of the changes written in the Container layer "committed" into a read-only layer at the top of the newly formed image. Migrating it to the destination, at this point, is no different from a stateless migration.
@@ -31,21 +26,21 @@ To tame this growth, [layers squashing](https://docs.docker.com/engine/reference
 ### docker export/import ###
 These two commands allow you to [export](https://docs.docker.com/engine/reference/commandline/export/)/[import](https://docs.docker.com/engine/reference/commandline/import/) a container file system to/from a tar archive.
 
-Differently from `docker save` and `load`, which would pack up all container metadata but disregard the Container layer, with `export` just the container file system is extracted, exactly as it is seen from within the container itself. As a result, all layers are flattened out in a unified tree structure.
+Differently from `docker save` and `load`, which would pack up all container metadata but disregard the Container layer, with `export` just the container file system is extracted, exactly as it is seen from within the container itself. As a result, all layers are flattened out in a unified tree-like file system structure.
 
-It is immediately obvious how this would compromise the whole idea of exploiting layers already present at the destination, or those otherwise available from neighboring nodes.
+It is immediately obvious how this would compromise the whole idea of exploiting the layers already present at the destination, or those otherwise available from neighboring nodes.
 
 ### docker diff ###
-In addition to the solutions mentioned above, one could write its own hack and inspect, backup and, symmetrically, extract at the destination the content of the Container layer by accessing it from the host file system (somewhere in `/var/lib/docker/<storage-driver>`).
+In addition to the solutions mentioned above, one could write its own "hack" and inspect, backup and, symmetrically, extract at the destination the content of the Container layer by accessing it from the host file system (somewhere in `/var/lib/docker/<storage-driver>`).
 
 The proposed solution somehow follows this idea, but it tries to exploit available Docker commands and to keep things as portable and simple as possible.
 
-One neat way to access the Container layer is through [`docker diff`](https://docs.docker.com/engine/reference/commandline/diff/): we read from the documentation that it gives us one like for each change recorded in the writable layer, with:
+One neat way to inspect the Container layer is through [`docker diff`](https://docs.docker.com/engine/reference/commandline/diff/): it outputs one line for every change recorded in the writable layer, prefixed with:
 - `A` for added files
 - `C` for changed files
 - `D` for deleted files
 
-Because we are relying on a union file system, added or changed files have, in fact, to be present in the target Container layer, shadowing or not pre-existing versions from the underlying layers. For deleted files and directories, we know that the implementation is somehow similar to `C` but with special place-holders (in the sense that we are _adding_ special files to shadow others with the same name), but we don't want to deal with them directly.
+Because we are relying on a union file system, added or changed files have, in fact, to be present in the target Container layer, shadowing or not pre-existing versions from the underlying layers. For deleted files and directories, we know that the implementation is somehow similar to `C` but with special place-holders (in the sense that we are _adding_ special files with the same name to shadow pre-existing copies), but we don't want to deal with them directly.
 
 For `A` and `C` files, we can simply copy them into an archive, transfer it to the destination and extract it within the target container (at default, write operations are made to the Container layer).
 
@@ -64,7 +59,7 @@ At the destination, after getting the archive via `scp`, we have to extract it:
 docker exec -i $CONTAINER bash -c 'tar xPvf - -C /' < "$TAR_FILE"
 ```
 
-Deleted files and directories don't have to be transferred and we just need their full path so we can delete them in the target container as well:
+Deleted files and directories don't have to be transferred to the destination, we just need their full path so we can delete them in the target container as well:
 
 ```
 ssh $SOURCE "docker diff $SRC_CONTAINER" | while read type path; do
@@ -109,7 +104,7 @@ docker run --rm --volumes-from CONTAINER \
 
 This container mounts all volumes from `CONTAINER`, plus a bind mount used to store backup files in the host file system (in `$(pwd)/backup`).
 
-`CONTAINER` may be optionally suffixed with `:ro` to mount volumes in read-only mode. By default, volumes are mounted in the same mode as the reference container indicated with `--volumes-from`.
+> `CONTAINER` may be optionally suffixed with `:ro` to mount volumes in read-only mode. By default, volumes are mounted in the same mode as the reference container indicated with `--volumes-from`.
 
 As this needs to be done for all volumes, we can add a loop that takes volumes information (`VOLUME` as the volume name and `VOLUME_MOUNT` as its mount point) from standard input, retrieved with `docker container inspect`:
 ```
@@ -126,7 +121,7 @@ docker container inspect --format='{{range $m := .Mounts}}
 The actual loop is implemented in its own [script file](../stateful%20migration/vol_to_tar.sh), mounted in the container for better modularity and ease of management.
 Similarly, by keeping the steps 1 and 2 described above separated (left and right-hand side of the pipeline), we can easily change things so that just a _subset_ of volumes is backed up (and migrated).
 
-The script containing a cleaned-up version of the above code can be found [here](../stateful%20migration/volumes_backup.sh).
+A script containing a comprehensive version of the above code can be found [here](../stateful%20migration/volumes_backup.sh).
 
 
 ### Restore volumes content ###
@@ -151,14 +146,14 @@ docker run -d \
 
 The very last step is running the target container with the same volumes populated by the previous one:
 ```
-docker run -d --volumes-from UTILITY_CONT TARGET_CONT_IMAGE
+docker run -d --volumes-from UTILITY_CONTAINER TARGET_CONT_IMAGE
 ```
 
 The restore process (steps 3 and 4) can be performed in one go by executing this [script](../stateful%20migration/volumes_migr_dest.sh) with the right parameters.
 An extended version of it will be presented at the end of this section, comprehensive of the issues that are still to be faced.
 
 ### Migrating volume mount options ###
-The second task described above refers to the problem of mounting the newly created volumes at the destination side with the same configuration used at the source. A volume, in fact, is not just its content, but it is also a data structure maintained by Docker with a number of properties/meta-data associated with it.
+The second task described above refers to the problem of mounting the newly created volumes at the destination with the same configuration used at the source. A volume, in fact, is not just its content, but it is also a data structure maintained by Docker with a number of properties/meta-data associated with it.
 
 ```
 $ docker volume inspect myvolume
@@ -241,7 +236,7 @@ done >> "$BACKUP_DIR"/volumes.list
 ```
 This is the only significant change from the script presented in the previous section, however, the updated version can be found [here](../stateful%20migration/volumes_backup_attr.sh).
 
-At the destination, this file is used to construct the right `--mount` flag for each volume/line. The code reported below is from [this script](../stateful%20migration/volumes_attr_migr_dest.sh)
+At the destination, this file is used to construct the right `--mount` flag for each volume/line. The code reported below is from [this script](../stateful%20migration/volumes_attr_migr_dest.sh):
 
 ```
 VOLNAMES=()
@@ -272,7 +267,7 @@ for list in "$TARGET_DIR"/*.list; do
 done
 ```
 
-An additional problem arises from read-only volumes: as we are creating and mounting the volumes in the utility container to populate them from the tar archives, we obviously have to mount them in read-write mode. However, when the actual target container "inherits" the volumes with `--volumes-from`, we have to set to read-only those that were so in the source.
+An additional problem arises from read-only volumes: as we are creating and mounting the volumes in the utility container to populate them from the tar archives, we obviously have to mount them in read-write mode. However, when the actual target container "inherits" the volumes with `--volumes-from`, we have to set to read-only those that were so at the source.
 
 We use for that the previously mentioned `:ro` suffix, again to keep things as simple as possible (there surely are more elegant solutions): the list of volumes is split into two groups, with two separate utility containers dedicated to the creation of their volumes.
 
@@ -356,11 +351,11 @@ Instead of migrating data on-demand from one Redis instance to the other, we cou
 
   Whenever a service/container performs a write operation to its local Redis server (running on the same node), the update is automatically propagated to all other servers so that, after a synchronization period, all replicas have the same information. At migration time nothing happens, as the migrating container will find at the destination a local copy of all the data it needs.
 
-Note that a hybrid approach is also possible, with a number of Redis clones that does not exactly match the number of nodes in the cluster. On average, with the right load-balancing mechanism and routing rules, each container would send commands to the "closest" Redis instance, thus reducing the average access latency mentioned for the first centralized scenario.
+Note that a hybrid approach is also possible, with a number of Redis clones that does not exactly match the number of nodes in the cluster. On average, with the right load-balancing mechanism and routing rules, each container would send commands to the "closest" Redis instance, thus reducing the average access latency mentioned for the centralized scenario.
 
 > Having multiple Redis instances does not just improve average access latency, but it also provides higher availability in case of failures (of both service containers and Redis servers).
 
-> The number of Redis instances can also be greater than the number of nodes, for higher availability and scalability (see [presharding](https://redis.io/topics/partitioning))
+> The number of Redis instances can also be greater than the number of nodes, for higher availability and scalability (see [presharding](https://redis.io/topics/partitioning)).
 
 We see here how to configure our cluster to work with Redis replication in the simple case of one instance/replica per node. More complex scenarios are possible, for example by introducing [Redis Cluster](https://redis.io/topics/cluster-spec) or [Redis Sentinel](https://redis.io/topics/sentinel).
 
@@ -421,7 +416,7 @@ docker container rm -f REDIS_CONTAINER
 
 
 The problem with this approach is that it forces application developers to use Redis (in this case) or others similar tools and, as a consequence, migrating data becomes strongly dependent on the chosen external storage system.
-The same consideration made for databases applies to this scenario as well: an application that migrates containers should not focus on external services the container relies upon, as it is a case-by-case problem on its own.
+The same consideration made for databases applies to this scenario as well: an application/network service that migrates containers should not focus on external resources the container relies upon, as they are a case-by-case problem on their own.
 
 ### CRIU: Checkpoint/Restore In Userspace ###
 A running Docker container can be checkpointed and later restored using [CRIU](https://criu.org/Main_Page), as it is explained [here](https://github.com/docker/cli/blob/master/experimental/checkpoint-restore.md).
@@ -429,6 +424,7 @@ A running Docker container can be checkpointed and later restored using [CRIU](h
 First we need to install CRIU. On Ubuntu this can be done with:
 ```
 sudo apt-get install criu
+criu --version
 ```
 (I'm using version 2.6)
 
@@ -441,9 +437,13 @@ As for now, the most updated stable version of Docker for what concerns Checkpoi
 ```
 sudo apt-get install docker-ce=5:19.03.0~3-0~ubuntu-xenial
 ```
+(After having added the official Docker repository \[[guide](https://www.digitalocean.com/community/tutorials/how-to-install-and-use-docker-on-ubuntu-18-04)\])
+
 In general, because of some [reported issues](https://github.com/moby/moby/issues/35691#issuecomment-480350129), it is a good idea to use a version higher than 18.10 (check the output of `docker version`).
 
-We then have to enable experimental features and restart the Docker daemon in order to use [`docker checkpoint` commands](https://docs.docker.com/engine/reference/commandline/checkpoint/).
+We then have to [enable experimental features](https://github.com/docker/docker-ce/blob/master/components/cli/experimental/README.md) and restart the Docker daemon (`systemctl restart docker`) in order to use [`docker checkpoint` commands](https://docs.docker.com/engine/reference/commandline/checkpoint/).
+> To enable experimental features on the Docker daemon, edit the `daemon.json` and set `experimental` to `true`.
+> To enable experimental features in the Docker CLI, edit the `config.json` file and set `experimental` to `"enabled"`.
 
 #### Example ####
 In this simple example we are going to:
