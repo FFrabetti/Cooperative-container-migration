@@ -29,11 +29,15 @@ For both these cases, we evaluate following schemes.
 2. Load the image to bring up Docker, CRIU and other dependencies:
 ```
 omf load -i containerlm1.ndz -t all
+omf tell -a on -t all
 ```
 3. Login to the node1-1 and node1-2 to run the set-up script:
 ```
 ssh root@node1-1
 bash setup.sh
 ```
+The setup script will create executables in the /root/bin directory. 
+
+4. Follow the steps listed on the [this page] (./trafficgen.md) to test the applications.
 
 
