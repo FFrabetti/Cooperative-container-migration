@@ -24,3 +24,16 @@ For both these cases, we evaluate following schemes.
 - Centralized Layered Container Migration (CLCM)
 - Distributed Layered Container Migration (DLCM)
 
+## Procedure ##
+1. Reserve resources on the ORBIT. We use SB4 for the tests and Grid for final evaluation. 
+2. Load the image to bring up Docker, CRIU and other dependencies:
+```
+omf load -i containerlm1.ndz -t all
+```
+3. Login to the node1-1 and node1-2 to run the set-up script:
+```
+ssh root@node1-1
+bash setup.sh
+```
+
+
