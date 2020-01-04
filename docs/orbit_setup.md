@@ -38,6 +38,6 @@ bash setup.sh
 ```
 The setup script will create executables in the /root/bin directory. 
 
-4. Follow the steps listed on the [this page] (./trafficgen.md) to test the applications.
+4. Follow the steps listed on the [this page](../docs/trafficgen.md) to test different applications.
 
 
