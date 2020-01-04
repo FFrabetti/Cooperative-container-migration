@@ -442,7 +442,9 @@ sudo apt-get install docker-ce=5:19.03.0~3-0~ubuntu-xenial
 In general, because of some [reported issues](https://github.com/moby/moby/issues/35691#issuecomment-480350129), it is a good idea to use a version higher than 18.10 (check the output of `docker version`).
 
 We then have to [enable experimental features](https://github.com/docker/docker-ce/blob/master/components/cli/experimental/README.md) and restart the Docker daemon (`systemctl restart docker`) in order to use [`docker checkpoint` commands](https://docs.docker.com/engine/reference/commandline/checkpoint/).
+
 > To enable experimental features on the Docker daemon, edit the `daemon.json` and set `experimental` to `true`.
+
 > To enable experimental features in the Docker CLI, edit the `config.json` file and set `experimental` to `"enabled"`.
 
 #### Example ####
@@ -493,13 +495,13 @@ By checking its output (`docker logs looper-clone`), we should see the counting 
 
 Steps 2 and 4 can also be done by running these scripts:
 ```
-docker run --name looper ...
+docker run --name looper ... # see above
 criu_checkpoint.sh looper cp1 checkpts
 ```
 ([criu_checkpoint.sh](../stateful%20migration/criu_checkpoint.sh))
 
 ```
-docker create --name looper-clone ...
+docker create --name looper-clone ... # see above
 scp SOURCE:checkpts/looper.cp1.tar looper.cp1.tar
 criu_restore.sh looper-clone cp1 < looper.cp1.tar
 ```
