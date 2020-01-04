@@ -7,3 +7,20 @@ The ORBIT large-scale radio grid emulator consists of an array of ~20x20 open-ac
 For the container migration evaluation at scale, we use ORBIT testbed for our experimentation.
 
 Read more about ORBIT [here](http://www.orbit-lab.org).
+
+#### Steps ####
+- Reserve ORBIT resources
+- Set-up resources
+- Carry out migration experiment
+- Collect results
+- Release resource
+
+#### Use-cases ####
+- Stateless migration 
+- Stateful migration
+
+For both these cases, we evaluate following schemes.
+- Centralized Traditional Container Migration (CTCM)
+- Centralized Layered Container Migration (CLCM)
+- Distributed Layered Container Migration (DLCM)
+
