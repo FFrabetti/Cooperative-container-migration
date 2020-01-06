@@ -1,7 +1,7 @@
 #!/bin/bash
 
 CONTAINER=$1
-BACKUP_DIR="/backup/$CONTAINER"
+BACKUP_DIR="$(pwd)/$CONTAINER/backup"
 
 if [ $# -eq 2 ]; then
 	BACKUP_DIR="$2"

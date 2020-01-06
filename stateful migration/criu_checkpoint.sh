@@ -12,18 +12,19 @@ fi
 CONTAINER=$1
 CHECKPOINT=$2
 
-SRC_DIR=$(pwd)
+SRC_DIR=$(pwd) 	# original current directory (where the tar file will be created)
+CHECKPT_DIR="$CONTAINER/checkpoint"
 if [ $# -eq 3 ]; then
-	mkdir -p "$3"
-	cd "$3"
+	CHECKPT_DIR="$3"
 fi
-
-# --leave-running 		Leave the container running after checkpoint
-# docker container ls
+mkdir -p "$CHECKPT_DIR" && cd "$CHECKPT_DIR"
+# now the current directory is the one used for checkpoint-dir
 
 # remember to use an absolute path for --checkpoint-dir
-docker checkpoint create $CONTAINER $CHECKPOINT --checkpoint-dir="$(pwd)"
-sudo tar cvf "$SRC_DIR/$CONTAINER.$CHECKPOINT.tar" $CHECKPOINT
+docker checkpoint create $CONTAINER $CHECKPOINT --checkpoint-dir="$(pwd)" --leave-running
+sudo tar cf "$CONTAINER.$CHECKPOINT.tar" $CHECKPOINT
+# $CHECKPOINT is also the name of the directory created by docker checkpointing process
+
 
 # See:
 # https://criu.org/Docker
