@@ -50,12 +50,12 @@ procedure migrateStateful(S := source, C := container) : TargetC
 	# 2.2 transfer volumes
 	sendFrom(S, C.VolumesMetadata);
 	VolumesList := filterIfAlreadyPresent(C.VolumesMetadata);
-	VolArchSet := new Set;
-	foreach V in VolumesList:
-		ssh S: VolArch := createArchive(V);
-		sendFrom(S, VolArch);
-		VolArchSet.put(VolArch);
-	UtilityC := startContainerWithVolumes(ContImage, C.VolumesMetadata, VolArchSet);
+	VolArchives := copyArchAlreadyPresent(C.VolumesMetadata);
+	ssh S: UtilityC := startContainerVolumesFrom(C);
+	       ArchDir := createVolArchives(UtilityC, VolumesList);
+	rsyncFrom(S, ArchDir, VolArchives);
+	TargetUtilityC := startContainerWithVolumes(C.VolumesMetadata);
+	extractArchivesToVol(TargetUtilityC, VolArchives);
 	
 	# 2.3 transfer checkpoint
 	ssh S: CheckptCi := createCheckpoint(C, false); # stopContainer set to false
@@ -106,13 +106,7 @@ function rsyncFrom {
 		exit 1
 	fi
 
-	SOURCE=$1
-	SRC_PATH="$2"
-	DEST_PATH="$3"
-
-	# -avz 	archive, verbose, compress
-	# pull from $SOURCE
-	rsync -avz --delete $SOURCE:"$SRC_PATH" "$DEST_PATH"
+	rsync -avz --delete $1:"$2" "$3"
 }
 ```
 
@@ -141,7 +135,7 @@ Set up:
 
 Now we can migrate it to the destination by executing:
 ```
-tsm_dest.sh <SOURCE_ADDR> <MASTER_REGISTRY> toytsm
+tsm_dest.sh <SOURCE_ADDR> toytsm
 ```
 
 In case of success, the script prints the ID of the migrated container. To check that runtime and storage data have actually been migrated to the destination, run:
