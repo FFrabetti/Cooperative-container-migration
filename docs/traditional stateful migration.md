@@ -53,9 +53,9 @@ procedure migrateStateful(S := source, C := container) : TargetC
 	AlreadyPresentList := new List;
 	foreach Vol in C.VolumesMetadata:
 		if Vol.Readonly = false || not isArchivePresent(Vol):
-			SendVolContentList.add(Vol)
+			SendVolContentList.add(Vol);
 		if isArchivePresent(Vol):
-			AlreadyPresentList.add(Vol)
+			AlreadyPresentList.add(Vol);
 	VolArchives := copyArchives(AlreadyPresentList);
 	ssh S: UtilityC := startContainerVolumesFrom(C);
 	       ArchDir := createArchives(UtilityC, SendVolContentList);
