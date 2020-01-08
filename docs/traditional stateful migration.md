@@ -197,6 +197,11 @@ As you can see, the read-only volume mounted at `/testro` is not archived nor sy
 
 This concept of "caching" content is at the base of cooperative migration, as it enables the destination to receive the required pieces of information from multiple sources.
 
+### Centralized control? ###
+Because everything comes from the source, there seems to be no real need for a centralized controller. This, however, does not mean that there couldn't be one for orchestrating purposes, or to send synchronization messages to the source and the destination (e.g. start migration, stop source container, end migration, etc.).
+
+Optionally, there could also be just one Registry running at the master. If this is the case, the previous script has to be executed with a third argument that tells the destionation where to pull the container image from (as the source won't have its own Registry): `<REGISTRY_ADDR>/<IMAGE_REPO>:<IMAGE_TAG>`
+
 ### Assumptions and security remarks ###
 - We are assuming that **the same image means the exact same service**, which is not usually the case, as every container has its own configuration (volumes, etc.), and can give life to a variety of different services.
 - We require that **all writable volumes have a label containing their GUID**.
