@@ -85,10 +85,10 @@ foreach ROVol in SendVolContentList:
 An implementation of `selectNeighborWithVol` is given below in bash, with a basic policy that simply takes the highest score result:
 ```
 function selectNeighborWithVol { # policy: highest score
-	REDIS_HOST="$1"
-	KEY="$2"
+	[ $# -eq 2 ] && { local RHOST="-h $1"; shift; }
+	local KEY="$1"
 	
-	redis-client.sh "$REDIS_HOST" ZREVRANGE "$KEY" 0 0 	# <- START STOP (inclusive)
+	redis-cli --raw ${RHOST:-} ZREVRANGE "$KEY" 0 0 	# <- START STOP (inclusive)
 }
 ```
 
@@ -97,12 +97,12 @@ Whenever a node acquires new read-only volumes (e.g. because of incoming migrati
 
 ```
 function updateVolRegistry {
-	REDIS_HOST="$1"
-	KEY="$2"
-	VALUE="$3"
-	SCORE=$4
+	[ $# -eq 4 ] && { local RHOST="-h $1"; shift; }
+	local KEY="$1"
+	local VALUE="$2"
+	local SCORE=$3
 	
-	redis-client.sh "$REDIS_HOST" ZADD "$KEY" $SCORE "$VALUE"
+	redis-cli --raw ${RHOST:-} ZADD "$KEY" $SCORE "$VALUE"
 }
 ```
 
@@ -151,15 +151,15 @@ This is an implementation of a function for selecting the node with the most rec
 
 ```
 function selectNeighborWithCheckpt {
-	REDIS_HOST="$1"
-	IMAGE_TAG="$2"
-	USER_ID="$3"
+	[ $# -eq 3 ] && { local RHOST="-h $1"; shift; }
+	local IMAGE_TAG="$1"
+	local USER_ID="$2"
 	
-	RES=$(redis-client.sh "$REDIS_HOST" ZREVRANGE "$IMAGE_TAG" 0 0)
+	local RES=$(redis-cli --raw ${RHOST:-} ZREVRANGE "$IMAGE_TAG:$USER_ID" 0 0)
 	if [ $RES ]; then
 		echo $RES
 	else
-		redis-client.sh "$REDIS_HOST" ZREVRANGE "$IMAGE_TAG:$USER_ID" 0 0
+		redis-cli --raw ${RHOST:-} ZREVRANGE "$IMAGE_TAG" 0 0
 	fi
 }
 ```
@@ -172,17 +172,17 @@ The `IMAGE_TAG` set needs to be updated for every incoming migration, while for 
 > If the same node is visited more than once through a series of migrations, the timestamp value would simply be updated, which is coherent with the expected behavior.
 
 ```
-function updateCheckptRegistry { 	# HOST IMAGE_TAG [USER_ID] VALUE SCORE
-	REDIS_HOST="$1"
-	KEY="$2" 			# IMAGE_TAG
-	if [ $# -eq 5 ]; then
-		KEY="$KEY:$3" 	# USER_ID
+function updateCheckptRegistry {
+	[ $# -eq 5 ] && { local RHOST="-h $1"; shift; }
+	local IMAGE_TAG="$1"
+	if [ $# -eq 4 ] && [ ! "$2" = "" ]; then
+		local KEY=":$2" 	# :$USER_ID
 		shift
 	fi
-	VALUE="$3"
-	SCORE=$4
+	local VALUE="$2"
+	local SCORE=$3
 	
-	redis-client.sh "$REDIS_HOST" ZADD "$KEY" $SCORE "$VALUE"
+	redis-cli --raw ${RHOST:-} ZADD "$IMAGE_TAG${KEY:-}" $SCORE "$VALUE"
 }
 ```
 
@@ -190,16 +190,23 @@ function updateCheckptRegistry { 	# HOST IMAGE_TAG [USER_ID] VALUE SCORE
 From [ZADD – Redis](https://redis.io/commands/zadd):
 > The score values should be the string representation of a double precision floating point number. `+inf` and `-inf` values are valid values as well.
 
-The [redis-client.sh](../stateful%20migration/redis-client.sh) script is as simple as:
-```
-REDIS_HOST="$1"
-shift
-redis-cli -h "$REDIS_HOST" --raw $@
-```
-See: [redis-cli, the Redis command line interface](https://redis.io/topics/rediscli)
+See also: [redis-cli, the Redis command line interface](https://redis.io/topics/rediscli)
 
 ## Script ##
-The main differences from the algorithm described for [traditional stateful migration](traditional%20stateful%20migration.md) have already been explained in previous sections, so here we simply report the corresponding snippets in bash script:
+The 5 steps described for [traditional stateful migration](traditional%20stateful%20migration.md) apply to cooperative migration as well, with the difference that multiple sources can provide different bits of information. Because of that, some parts may be parallelized: specifically, tasks that are in the same step can be executed concurrently.
+
+To give an idea, in pseudo-code ("bash-like") it would be something like this:
+```
+# 2. get all container data
+fetchLayers 	...args... & PID1=$!
+fetchVolumes	...args... & PID2=$!
+fetchCheckpt	...args... & PID3=$!
+
+wait 	# or: wait $PID1 $PID2 $PID3
+```
+For layers and volumes, each of them can also be transferred in parallel.
+
+We have already explained in previous sections how the destination can find out and choose where to get each piece of content from, so here we simply report the corresponding snippets in bash script for step 2:
 
 ```
 TODO
@@ -207,39 +214,44 @@ TODO
 ([See full script](../stateful%20migration/csm_dest.sh))
 
 ### Example ###
-The same toy application presented for traditional migration is suitable for the cooperative approach as well.
-The only difference is in the setup process: we need the destination to be able to query a Redis server instance containing the information about volumes and checkpoints (plus a Docker Registry for layers), and, to see cooperation in practice, we need at least one other node to get those contents from.
+The same toy application presented for traditional migration is suitable for the cooperative approach as well, given some adjustments.
+
+One major difference is in the setup process: we need the destination to be able to query a Redis server containing the information about volumes and checkpoints (plus a Docker Registry for layers), and, to see cooperation in practice, we need at least one other node to get those contents from.
+For now, all these elements will be hosted on the master.
 
 #### Master setup ####
-1. TODO: Docker Registry ...
-2. Start a Redis instance:
+
+##### Docker Registry #####
+TODO
+
+##### Redis server #####
+1. Start a Redis instance:
 
    ```
    docker run -d -p 6379:6379 --name myredis redis
    ```
-3. Install `redis-cli`:
+2. Install `redis-cli` and test if the server is reachable:
    
    ```
    sudo apt-get install redis-tools
+   redis-cli ping || echo "Error: cannot ping the server"
    ```
-   
-   and use our custom client and [related functions](../stateful%20migration/redis-functions.sh) to fill it with some data:
-   ```
-   #!/bin/bash
-   
-   source $(dirname "$0")/redis-functions.sh
-   REDIS_HOST="$1"
-   
-   # volumes (RO and RW)
-   updateVolRegistry "$REDIS_HOST" VOL_ID NODE_IP SCORE
-   # ...
-   
-   # checkpoints (same container and same application)
-   updateCheckptRegistry "$REDIS_HOST" IMAGE_TAG USER_ID NODE_IP TIMESTAMP
-   updateCheckptRegistry "$REDIS_HOST" IMAGE_TAG NODE_IP SCORE
-   # ...
-   ```
-4. Create/copy the corresponding archive files so the master, with the additional role of neighbor of the destination, can provide them when asked
+
+##### Volumes and checkpoints #####
+We want the master to have:
+- a copy of the read-only volume `testro`
+- a snapshot of the writable volume `testrw`
+- a checkpoint of our `toytsm` container
+
+(see [the previous example](traditional%20stateful%20migration.md#example))
+
+All of them must also be correctly registered in the Redis server for querying.
+
+Because of the complexity of the setup process, these stages have been grouped in a script: [csm_example_master.sh](../stateful%20migration/csm_example_master.sh)
+
+```
+csm_example_master.sh <SOURCE> <MASTER> <USER_ID>
+```
 
 ## From centralized to distributed ##
 Up to now, we have implicitly assumed the presence of a Docker Registry and of a Redis instance with volumes and checkpoints "registries" every node could refer to for queries and updates.

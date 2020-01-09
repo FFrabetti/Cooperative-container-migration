@@ -443,9 +443,9 @@ In general, because of some [reported issues](https://github.com/moby/moby/issue
 
 We then have to [enable experimental features](https://github.com/docker/docker-ce/blob/master/components/cli/experimental/README.md) and restart the Docker daemon (`systemctl restart docker`) in order to use [`docker checkpoint` commands](https://docs.docker.com/engine/reference/commandline/checkpoint/).
 
-> To enable experimental features on the Docker daemon, edit the `daemon.json` and set `experimental` to `true`.
+> To enable experimental features on the Docker daemon, edit the `/etc/docker/daemon.json` and set `experimental` to `true`.
 
-> To enable experimental features in the Docker CLI, edit the `config.json` file and set `experimental` to `"enabled"`.
+> To enable experimental features in the Docker CLI, edit the `~/.docker/config.json` file and set `experimental` to `"enabled"`.
 
 #### Example ####
 In this simple example we are going to:

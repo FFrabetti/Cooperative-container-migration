@@ -123,6 +123,7 @@ To test our script, we try to migrate a toy container which has some running sta
 Set up:
 1. Start a source and a destination node
 2. Run a [local Registry](../various/utils/local_registry.sh) on both of them and pull/push a basic `busybox` image from the Docker Registry:
+
    ```
    local_registry.sh <CERTS_DIR>
    docker pull busybox
@@ -131,22 +132,29 @@ Set up:
    ```
    > This is just to simulate a situation where the destination already has some of the image layers of the migrating container.
 3. At the source, create the two volumes and run a container with the sole purpose of writing a file in what will be the readonly one:
+
    ```
    docker volume create --label rw-guid=$(cat /proc/sys/kernel/random/uuid) testrw
    docker volume create testro
    docker run --rm -v testro:/testro \
 		busybox /bin/sh -c 'echo "Read-only content" > /testro/testfile'
    ```
-4. Again at the source, build (and push to the local Registry) the image of the toy container with the following `Dockerfile`:
+4. Again at the source, create a folder with the following `Dockerfile`:
+
    ```
    FROM busybox
    CMD ["/bin/sh", "-c", "i=0; while true; do echo $i | tee -a /testrw/counter; i=$((i+1)); sleep 1; done"]
    ```
+   
+   then build and push to the local Registry the image of the toy container:
+   
    ```
+   # cd in the directory with Dockerfile
    docker build -t <REGISTRY_ADDR>/testtsm:0.1 .
    docker push <REGISTRY_ADDR>/testtsm:0.1
    ```
 5. Finally, run the toy container at the source:
+   
    ```
    docker run -d --name toytsm \
 		-v testrw:/testrw -v testro:/testro:ro \

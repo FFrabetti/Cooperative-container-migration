@@ -1,48 +1,50 @@
 #!/bin/bash
 
-CLIENT="redis-client.sh"
-PATH="$PATH:."
-! which $CLIENT > /dev/null && [ ! -x $CLIENT ] && echo "Error: $CLIENT not found" && exit 1
+which redis-cli > /dev/null || { echo "Error: redis-cli not found"; exit 1; }
 
+# ${parameter:-word}
+# If parameter is unset or null, the expansion of word is substituted. Otherwise, the value of parameter is substituted.
 
 function selectNeighborWithVol { # policy: highest score
-	REDIS_HOST="$1"
-	KEY="$2"
+	[ $# -eq 2 ] && { local RHOST="-h $1"; shift; }
+	local KEY="$1"
 	
-	$CLIENT "$REDIS_HOST" ZREVRANGE "$KEY" 0 0 	# <- START STOP (inclusive)
+	redis-cli --raw ${RHOST:-} ZREVRANGE "$KEY" 0 0 	# <- START STOP (inclusive)
 }
 
 function updateVolRegistry {
-	REDIS_HOST="$1"
-	KEY="$2"
-	VALUE="$3"
-	SCORE=$4
+	[ $# -eq 4 ] && { local RHOST="-h $1"; shift; }
+	local KEY="$1"
+	local VALUE="$2"
+	local SCORE=$3
 	
-	$CLIENT "$REDIS_HOST" ZADD "$KEY" $SCORE "$VALUE"
+	redis-cli --raw ${RHOST:-} ZADD "$KEY" $SCORE "$VALUE"
 }
 
-function selectNeighborWithCheckpt {
-	REDIS_HOST="$1"
-	IMAGE_TAG="$2"
-	USER_ID="$3"
+function selectNeighborWithCheckpt { # policy: most recent checkpoint of the container, or the "best" from the same application
+	[ $# -eq 3 ] && { local RHOST="-h $1"; shift; }
+	local IMAGE_TAG="$1"
+	local USER_ID="$2"
 	
-	RES=$($CLIENT "$REDIS_HOST" ZREVRANGE "$IMAGE_TAG" 0 0)
+	local RES=$(redis-cli --raw ${RHOST:-} ZREVRANGE "$IMAGE_TAG:$USER_ID" 0 0)
 	if [ $RES ]; then
 		echo $RES
 	else
-		$CLIENT "$REDIS_HOST" ZREVRANGE "$IMAGE_TAG:$USER_ID" 0 0
+		redis-cli --raw ${RHOST:-} ZREVRANGE "$IMAGE_TAG" 0 0
 	fi
 }
 
-function updateCheckptRegistry { 	# HOST IMAGE_TAG [USER_ID] VALUE SCORE
-	REDIS_HOST="$1"
-	KEY="$2" 			# IMAGE_TAG
-	if [ $# -eq 5 ]; then
-		KEY="$KEY:$3" 	# USER_ID
+# [HOST] IMAGE_TAG (USER_ID | "") VALUE SCORE
+# IMAGE_TAG VALUE SCORE
+function updateCheckptRegistry {
+	[ $# -eq 5 ] && { local RHOST="-h $1"; shift; }
+	local IMAGE_TAG="$1"
+	if [ $# -eq 4 ] && [ ! "$2" = "" ]; then
+		local KEY=":$2" 	# :$USER_ID
 		shift
 	fi
-	VALUE="$3"
-	SCORE=$4
+	local VALUE="$2"
+	local SCORE=$3
 	
-	$CLIENT "$REDIS_HOST" ZADD "$KEY" $SCORE "$VALUE"
+	redis-cli --raw ${RHOST:-} ZADD "$IMAGE_TAG${KEY:-}" $SCORE "$VALUE"
 }

@@ -5,13 +5,18 @@
 # $2 := <CONTAINER>
 # $3 := [<REGISTRY_TAG>]
 
+if [ $# -ne 2 ] && [ $# -ne 3 ]; then
+	echo "Usage: $0 SOURCE CONTAINER [REGISTRY_TAG]"
+	exit 1
+fi
+
 SOURCE=$1
 CONTAINER=$2
 REGISTRY_TAG=$3 	# if not given, try to use $SOURCE/$IMAGE
 
 # given a container, find out which image it is using
-IMAGE=$(ssh $SOURCE "docker container inspect $CONTAINER -f '{{.Config.Image}}'")
-IMAGE=$(echo $IMAGE | cut -d/ -f2)
+IMAGE_FULL=$(ssh $SOURCE "docker container inspect $CONTAINER -f '{{.Config.Image}}'")
+IMAGE=$(echo $IMAGE_FULL | cut -d/ -f2)
 IMAGE_REPO=$(echo $IMAGE | cut -d: -f1)
 IMAGE_TAG=$(echo $IMAGE | cut -d: -f2)
 
@@ -22,7 +27,7 @@ fi
 
 # -------------------------------- FUNCTIONS --------------------------------
 function error_exit {
-	errMsg="$@"
+	local errMsg="$@"
 	if [ $# -eq 0 ]; then
 		errMsg="unspecified terminating error"
 	fi
@@ -45,7 +50,7 @@ function b64url_decode {
 }
 
 function rsyncFrom {
-	OPTIONS="-aczv" 	# archive, checksum (not mod-time & size), compress, verbose
+	local OPTIONS="-aczv" 	# archive, checksum (not mod-time & size), compress, verbose
 	if [ $# -eq 4 ]; then
 		OPTIONS=$4
 	fi
@@ -131,16 +136,17 @@ while read name destination rw labels options; do
 		
 		rw_guid=$(get_label_value "$RW_GUID_KEY" "$labels")
 		archpath="$VOL_ARCHIVES/rw.${rw_guid}.tar"
-		if [ $rw_guid ] && [ -e "$archpath" ]; then
+		[ $rw_guid ] || error_exit "Writable volume $name has no GUID"
+		if [ -e "$archpath" ]; then
 			cp "$archpath" "$VOL_BACKUPS/$name.tar"
-		fi		
+		fi
 	else
 		ro_guid=$(b64url_encode "$IMAGE$destination")
 		archpath="$VOL_ARCHIVES/ro.${ro_guid}.tar"
-		if [ ! -e "$archpath" ]; then
-			echo $name "$destination" 	# ro volumes not already in $VOL_ARCHIVES
-		else
+		if [ -e "$archpath" ]; then
 			cp "$archpath" "$VOL_BACKUPS/$name.tar"
+		else
+			echo $name "$destination" 	# ro volumes not already in $VOL_ARCHIVES
 		fi
 	fi
 done < "$VOL_LIST" | ssh $SOURCE "$REMOTE_SH_DIR/run_utilc_voltotar.sh $CONTAINER $REMOTE_VOL_BACKUPS"
@@ -191,16 +197,17 @@ UCONT_ID_RO=$(docker run -d \
 	$MOUNTSTR_RO ubuntu /tar_to_vol.sh ${VOLNAMES_RO[@]})
 
 # 2.3 transfer checkpoint
-# leave running
+mkdir -p "$CHECKPT_DIR"
 CHECKPOINT=$(date +%F_%H-%M-%S) 	# (e.g. 2020-01-06_08-09-15)
 
+# leave running
 # ################ SECURITY ALERT ################
 echo "$PASSWD" | ssh -tt $SOURCE "$REMOTE_SH_DIR/criu_checkpoint.sh $CONTAINER $CHECKPOINT $REMOTE_CHECKPT_DIR"
 # ################ SECURITY ALERT ################
 
 scp $SOURCE:"$REMOTE_CHECKPT_DIR/$CONTAINER.$CHECKPOINT.tar" ./ || error_exit "scp"
-mkdir -p "$CHECKPT_DIR"
 tar xf "$CONTAINER.$CHECKPOINT.tar" -C "$CHECKPT_DIR"
+
 
 TARGET_CONTAINER=$(docker create \
 	--volumes-from $UCONT_ID \
@@ -211,6 +218,7 @@ if [ $DEBUG_MODE ]; then
 	echo "Debug mode ON: waiting a few seconds..."
 	sleep 5
 fi
+
 
 # 3. stop container and 4.1 send checkpoint difference
 CHECKPOINT_F="${CHECKPOINT}-final"
