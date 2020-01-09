@@ -69,6 +69,8 @@ updateVolRegistry "ro:$RO_GUID" $MASTER_IP 100
 echo -n "Add to ro:$RO_GUID value $SOURCE (20): "
 updateVolRegistry "ro:$RO_GUID" $SOURCE 20 		# the source has to have it
 
+scp "$VOL_ARCHIVES/ro.${RO_GUID}.tar" $SOURCE:"$VOL_ARCHIVES/"
+
 # same container and same application
 TIMESTAMP=$(date +%s)
 echo -n "Add to $IMAGE $USER_ID value $MASTER_IP ($TIMESTAMP): "

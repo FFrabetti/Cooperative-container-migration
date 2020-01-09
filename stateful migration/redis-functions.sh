@@ -48,3 +48,9 @@ function updateCheckptRegistry {
 	
 	redis-cli --raw ${RHOST:-} ZADD "$IMAGE_TAG${KEY:-}" $SCORE "$VALUE"
 }
+
+function getSetSize {
+	[ $# -eq 2 ] && { local RHOST="-h $1"; shift; }
+
+	redis-cli --raw ${RHOST:-} ZCARD "$1"
+}

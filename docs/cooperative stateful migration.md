@@ -209,15 +209,76 @@ For layers and volumes, each of them can also be transferred in parallel.
 We have already explained in previous sections how the destination can find out and choose where to get each piece of content from, so here we simply report the corresponding snippets in bash script for step 2:
 
 ```
-TODO
+function fetchVolume {
+	local name="$1"
+	local prefix="$2"
+	local guid="$3"
+
+	local neighbor=$(selectNeighborWithVol "$REDIS_HOST" "${prefix}:${guid}")
+	[ $neighbor ] && scp $neighbor:"$VOL_ARCHIVES/${prefix}.${guid}.tar" "$VOL_BACKUPS/$name.tar"
+}
+
+function fetchCheckpt {
+	local image_tag="$1"
+	local user_id="$2"
+	
+	local neighbor=$(selectNeighborWithCheckpt "$REDIS_HOST" "$image_tag" "$user_id")
+	[ $neighbor ] && scp $neighbor:"$CHECKPT_ARCHIVES/$image_tag.tar" ./
+}
+```
+
+```
+# 2.2 transfer volumes
+ssh $SOURCE "$REMOTE_SH_DIR/get_volumes_list.sh $CONTAINER" > "$VOL_LIST"
+
+mkdir "$VOL_BACKUPS"
+while read name destination rw labels options; do
+	if [ $rw = "true" ]; then
+		echo $name "$destination"
+		
+		rw_guid=$(get_label_value "$RW_GUID_KEY" "$labels")
+		archpath="$VOL_ARCHIVES/rw.${rw_guid}.tar"
+		[ $rw_guid ] || error_exit "Writable volume $name has no GUID"
+		if [ -e "$archpath" ]; then
+			cp "$archpath" "$VOL_BACKUPS/$name.tar"
+		else
+			fetchVolume "$name" "rw" "$rw_guid" & 	# background
+		fi
+	else
+		ro_guid=$(b64url_encode "$IMAGE$destination")
+		archpath="$VOL_ARCHIVES/ro.${ro_guid}.tar"
+		if [ -e "$archpath" ]; then
+			cp "$archpath" "$VOL_BACKUPS/$name.tar"
+		else
+			if volumeSetNotEmpty "$name" "ro" "$ro_guid"; then
+				fetchVolume "$name" "ro" "$ro_guid" & 	# background
+			else
+				echo $name "$destination" 	# ro volumes not in any $VOL_ARCHIVES
+			fi
+		fi
+	fi
+done < "$VOL_LIST" | ssh $SOURCE "$REMOTE_SH_DIR/run_utilc_voltotar.sh $CONTAINER $REMOTE_VOL_BACKUPS"
+
+wait
+rsyncFrom $SOURCE "$REMOTE_VOL_BACKUPS/" "$VOL_BACKUPS"
+```
+
+```
+# 2.3 transfer checkpoint
+mkdir -p "$CHECKPT_DIR"
+fetchCheckpt "$IMAGE" "$USER_ID" && tar xf "$IMAGE.tar" -C "$CHECKPT_DIR"
+
+CHECKPOINT=$(date +%F_%H-%M-%S)
+ssh $SOURCE "docker checkpoint create $CONTAINER $CHECKPOINT --checkpoint-dir=\"$REMOTE_CHECKPT_DIR\" --leave-running"
+rsyncFrom $SOURCE "$REMOTE_CHECKPT_DIR/$CHECKPOINT/" "$CHECKPT_DIR" "-acz --delete"
 ```
 ([See full script](../stateful%20migration/csm_dest.sh))
 
 ### Example ###
 The same toy application presented for traditional migration is suitable for the cooperative approach as well, given some adjustments.
 
-One major difference is in the setup process: we need the destination to be able to query a Redis server containing the information about volumes and checkpoints (plus a Docker Registry for layers), and, to see cooperation in practice, we need at least one other node to get those contents from.
-For now, all these elements will be hosted on the master.
+One major difference is in the setup process: we need the destination to be able to query a Redis server about volumes and checkpoints (plus a Docker Registry for layers), and, to see cooperation in practice, we need at least one other node to get those contents from.
+For this first example, all these elements will be hosted on the master.
 
 #### Master setup ####
 
@@ -251,6 +312,15 @@ Because of the complexity of the setup process, these stages have been grouped i
 
 ```
 csm_example_master.sh <SOURCE> <MASTER> <USER_ID>
+```
+
+#### Source & Destination setup ####
+At the source, the migrating container has to be running (check with `docker container ls | grep toytsm`).
+
+The destination needs to have its own local Registry and, for the sake of this experiment, it should also have an empty `VOL_ARCHIVES`:
+```
+ls -l /volume_archives
+sudo rm -ri /volume_archives
 ```
 
 ## From centralized to distributed ##
