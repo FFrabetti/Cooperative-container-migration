@@ -14,4 +14,10 @@ Research conducted at Winlab, Rutgers University (NJ, USA).
     - [Traditional stateful migration](docs/traditional%20stateful%20migration.md)
     - [Cooperative stateful migration](docs/cooperative%20stateful%20migration.md)
 
-- [Test application](docs/trafficgen.md)
+- Multi-cluster
+
+- Experimentation
+  - [Test application](docs/trafficgen.md)
+  - [Orbit setup](docs/orbit_setup.md)
+  - Procedure
+  - Results

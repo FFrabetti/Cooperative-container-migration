@@ -86,6 +86,23 @@ function get_label_value {
 	[[ "$2" =~ (=|,)$1=([^,]+)(,|$) ]] && echo ${BASH_REMATCH[2]}
 }
 
+function getContainerImage {
+	local full=$(ssh $1 "docker container inspect $2 -f '{{.Config.Image}}'")
+	
+	local reg=""
+	if [[ "$full" =~ / ]]; then
+		reg=$(echo $full | cut -d/ -f1)
+	fi
+	local image=$(echo $full | cut -d/ -f2)
+	local repo=$(echo $image | cut -d: -f1)
+	local vers="latest"
+	if [[ "$image" =~ : ]]; then
+		vers=$(echo $image | cut -d: -f2)
+	fi
+	
+	echo $full $image $repo $vers $reg
+}
+
 function echoDebug {
 	[ $DEBUG_MODE ] && echo -e "$@\n"
 }
@@ -157,14 +174,13 @@ echoDebug "Directory changed to: $(pwd)"
 
 
 # given a container, find out which image it is using
-IMAGE_FULL=$(ssh $SOURCE "docker container inspect $CONTAINER -f '{{.Config.Image}}'")
-IMAGE=$(echo $IMAGE_FULL | cut -d/ -f2)
-IMAGE_REPO=$(echo $IMAGE | cut -d: -f1)
-IMAGE_TAG=$(echo $IMAGE | cut -d: -f2)
+read IMAGE_FULL IMAGE IMAGE_REPO IMAGE_TAG IMAGE_REG < <(getContainerImage $SOURCE $CONTAINER)
+
 
 # 2.1 transfer container image
 # TODO: loop fetchLayers ... & 	# then wait
-docker pull "$IMAGE_FULL" 	# just for now, pull it from the master
+docker pull "$IMAGE_FULL" 	# for now, pull it from where the source got it from
+# should it be forced from the master? $REGISTRY/$IMAGE
 
 echoDebug "Fetched container image: $IMAGE_FULL"
 
@@ -194,6 +210,7 @@ while read name destination rw labels options; do
 		[ $rw_guid ] || error_exit "Writable volume $name has no GUID"
 		if [ -e "$archpath" ]; then
 			cp "$archpath" "$VOL_BACKUPS/$name.tar"
+			echoDebug "Volume $name found locally: $archpath"
 		else
 			fetchVolume "$name" "rw" "$rw_guid" & 	# background
 		fi
@@ -202,6 +219,7 @@ while read name destination rw labels options; do
 		archpath="$VOL_ARCHIVES/ro.${ro_guid}.tar"
 		if [ -e "$archpath" ]; then
 			cp "$archpath" "$VOL_BACKUPS/$name.tar"
+			echoDebug "Volume $name found locally: $archpath"
 		else
 			if volumeSetNotEmpty "$name" "ro" "$ro_guid"; then
 				fetchVolume "$name" "ro" "$ro_guid" & 	# background
@@ -215,12 +233,12 @@ done < "$VOL_LIST" | ssh $SOURCE "$REMOTE_SH_DIR/run_utilc_voltotar.sh $CONTAINE
 echo "Wait for volumes fetching..."
 wait
 
-echoDebug "Content of $VOL_BACKUPS: $(ls -l "$VOL_BACKUPS")"
+echoDebug "Content of $VOL_BACKUPS: " $(for f in $(ls "$VOL_BACKUPS"); do wc -c "$VOL_BACKUPS/$f"; done)
 
 # rsync volume archives
 rsyncFrom $SOURCE "$REMOTE_VOL_BACKUPS/" "$VOL_BACKUPS"
 
-echoDebug "Content of $VOL_BACKUPS after sync: $(ls -l "$VOL_BACKUPS")"
+echoDebug "Content of $VOL_BACKUPS after sync: " $(for f in $(ls "$VOL_BACKUPS"); do wc -c "$VOL_BACKUPS/$f"; done)
 
 # run utility container to create the volumes and extract the content of the archives
 VOLNAMES=()
@@ -269,9 +287,9 @@ mkdir -p "$CHECKPT_DIR"
 
 echoDebug "Trying to fetch checkpoint for $IMAGE $USER_ID..."
 # --force local 	archive file is local even if it has a colon
-fetchCheckpt "$IMAGE" "$USER_ID" && tar xf "$IMAGE.tar" --force-local -C "$CHECKPT_DIR"
+fetchCheckpt "$IMAGE" "$USER_ID" && tar xf "./$IMAGE.tar" --force-local -C "$CHECKPT_DIR"
 
-echoDebug "Content of $(pwd): $(ls -l)"
+echoDebug "Content of $(pwd): $(ls)"
 
 # leave running
 CHECKPOINT=$(date +%F_%H-%M-%S) 	# (e.g. 2020-01-06_08-09-15)
@@ -281,7 +299,7 @@ ssh $SOURCE "docker checkpoint create $CONTAINER $CHECKPOINT --checkpoint-dir=\"
 echo "$PASSWD" | ssh -tt $SOURCE "sudo chown -R \$USER $REMOTE_CHECKPT_DIR"
 # ################ SECURITY ALERT ################
 
-echoDebug "About to sync remote $REMOTE_CHECKPT_DIR/$CHECKPOINT content with local $CHECKPT_DIR"
+echoDebug "Sync remote $REMOTE_CHECKPT_DIR/$CHECKPOINT content with local $CHECKPT_DIR"
 
 rsyncFrom $SOURCE "$REMOTE_CHECKPT_DIR/$CHECKPOINT/" "$CHECKPT_DIR" "-acz --delete" || error_exit "checkpoint rsync"
 
@@ -291,10 +309,7 @@ TARGET_CONTAINER=$(docker create \
 	--volumes-from $UCONT_ID_RO:ro \
 	"$LOCAL_REGISTRY/$IMAGE")
 
-if [ $DEBUG_MODE ]; then
-	echo "Debug mode ON: waiting a few seconds..."
-	sleep 5
-fi
+echoDebug "Waiting a few seconds..." && sleep 5
 
 
 # 3. stop container and 4.1 send checkpoint difference
@@ -304,6 +319,8 @@ ssh $SOURCE "docker checkpoint create $CONTAINER $CHECKPOINT_F --checkpoint-dir=
 # ################ SECURITY ALERT ################
 echo "$PASSWD" | ssh -tt $SOURCE "sudo chown \$USER $REMOTE_CHECKPT_DIR/$CHECKPOINT_F"
 # ################ SECURITY ALERT ################
+
+echoDebug "Sync remote $REMOTE_CHECKPT_DIR/$CHECKPOINT_F content with local $CHECKPT_DIR"
 
 rsyncFrom $SOURCE "$REMOTE_CHECKPT_DIR/$CHECKPOINT_F/" "$CHECKPT_DIR" "-acz --delete" || error_exit "final checkpoint rsync"
 sudo cp -r "$CHECKPT_DIR/" "/var/lib/docker/containers/$TARGET_CONTAINER/checkpoints/$CHECKPOINT_F"
@@ -317,7 +334,7 @@ done < "$VOL_LIST" | ssh $SOURCE "$REMOTE_SH_DIR/run_utilc_voltotar.sh $CONTAINE
 CHANGED_VOLS=$(rsyncFrom $SOURCE "$REMOTE_VOL_BACKUPS/" "$VOL_BACKUPS" "-acz --out-format=%n")
 
 # debug
-echoDebug "CHANGED_VOLS=$CHANGED_VOLS"
+echoDebug "Writable volumes changed: $CHANGED_VOLS"
 
 # wait for termination
 docker container wait $UCONT_ID $UCONT_ID_RO
@@ -338,6 +355,8 @@ docker start --checkpoint=$CHECKPOINT_F $TARGET_CONTAINER && echo -e '\n\nSUCCES
 
 
 # -------------------------------- CLEAN UP --------------------------------
+echoDebug "Starting clean up operations..."
+
 # sync local repo dir ($VOL_ARCHIVES) with all volume archives
 # we need to rename them first
 while read name dest rw labels rest; do
@@ -346,19 +365,19 @@ while read name dest rw labels rest; do
 
 	archfile="$VOL_BACKUPS/$name.tar"
 	if [ -f "$archfile" ]; then
-		echo "found file: $archfile"
+		echoDebug "found file: $archfile"
 		if [ $rw = "true" ]; then
 			rw_guid=$(get_label_value "$RW_GUID_KEY" "$labels")
-			echo "it is RW, with guid: $rw_guid"
+			echoDebug "it is RW, with guid: $rw_guid"
 			if [ $rw_guid ]; then
 				mv "$archfile" "$VOL_BACKUPS/rw.${rw_guid}.tar"
 			else
-				echo "No guid for $archfile"
+				echoDebug "No guid for $archfile"
 				rm "$archfile"
 			fi
 		else
 			ro_guid=$(b64url_encode "$IMAGE$dest")
-			echo "it is RO, with guid: $ro_guid"
+			echoDebug "it is RO, with guid: $ro_guid"
 			mv "$archfile" "$VOL_BACKUPS/ro.${ro_guid}.tar"
 		fi
 	fi

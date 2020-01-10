@@ -37,7 +37,7 @@ From the implementation point of view, **containers started from the same image 
 Once we have a way to compare two contents (e.g. through their digest), we just need a mechanism to store and retrieve, given a content ID/digest, a list of nodes that content can be fetched from.
 The problem of choosing among them, for example by testing the condition of the channel or the current workload of the node - i.e. by applying a certain _policy_ -, should be treated separately.
 
-What we have described is actually a **hash-map**, whose key is a content identifier and the stored value is a list of nodes.
+What we have described is actually a **hash-map** whose key is a content identifier and the stored value is a list of nodes.
 A simple way to implement it is by using [Redis Sorted sets](https://redis.io/topics/data-types-intro#redis-sorted-sets): Redis keys can be basically anything (up to 512 MB), and the stored value can be a data structure like a sorted set, an ordered collection of (string) elements without replication.
 
 In our case, it is useful to have non-repeated values by design, so we don't have to worry about checking if a node IP is already present or not before adding it to the set.
@@ -74,10 +74,10 @@ foreach Vol in C.VolumesMetadata:
 VolArchives := copyArchives(AlreadyPresentList);
 
 # 2.2.1 fetch read-only volumes
-foreach ROVol in SendVolContentList:
-	if ROVol.Readonly = true:
-		N := selectNeighborWithVol(ROVol, ROPolicy);
-		sendFrom(N, ROVol);
+foreach Vol in SendVolContentList:
+	if Vol.Readonly = true:
+		N := selectNeighborWithVol(Vol, ROPolicy);
+		sendFrom(N, Vol);
 # 2.2.2 fetch writable volumes
 ...
 ```
@@ -107,9 +107,9 @@ function updateVolRegistry {
 ```
 
 ### Writable dedicated volumes ###
-Because of the assumption introduced in the previous sections, writable volumes content is strictly associated with a specific user, therefore we may obtain a previous version of it just from a past migration of the same service/container.
+Because of the assumption introduced earlier, writable volumes content is strictly associated with a specific user, therefore we may obtain a previous version of it just from a past migration of the same service/container.
 
-Each volume has a GUID from which it can be identified across the cluster and over changes of its content, i.e. different versions: each version is defined by the volume's GUID and a timestamp; because the same containerized service is never executed on multiple nodes at the same time, this couple uniquely identifies a volume version.
+Each volume has a GUID from which it can be identified across the cluster and over changes of its content, i.e. through different versions: each version is defined by the volume's GUID and a timestamp; because the same containerized service is never executed on multiple nodes at the same time, this couple uniquely identifies a volume version.
 
 Again, a simple way to implement this data structure is by exploiting Redis Sorted sets with timestamp as ranking criterion.
 Here a revisited version of the pseudo-code from above:
@@ -127,7 +127,7 @@ foreach Vol in SendVolContentList:
 #### Updating the volumes registry ####
 Writable volumes content change over time, but just when it is mounted to a running container in the current node. For this reason, we can limit registry updates (and caching of content snapshots) just after each migration.
 
-The update mechanism is the same seen for read-only volumes, with the only difference in how the GUID is generated and in the additional timestamp associated with each version.
+The update mechanism is the same seen for read-only volumes, with the only difference in how the GUID is generated (and retrieved) and in the additional timestamp associated with each version.
 
 > Another, minor, difference would be the policy used for invalidating/discarding old volume snapshots after some time: in general, as they belong to a specific user, their lifespan may be shorter than the one of sharable read-only volumes.
 
@@ -138,7 +138,10 @@ To sum up, checkpoints are as sharable as read-only volumes, but they also have 
 
 When fetching a checkpoint, I want to refer to it by its application for the assumption of having similar memory fingerprints to apply. We therefore **associate each container image tag to a specific application/logical service**.
 
-> This is not a significant limitation, considering that version tags can be used to differentiate between applications started from the same image (as an image can have multiple tags).
+> This is not a significant limitation, considering that version tags (or even repository names) can be used to differentiate between applications started from the same image, as an image can have multiple tags.
+> `IMAGE -> IMAGE_TAG_1, ..., IMAGE_TAG_N`
+> `IMAGE_TAG := REPOSITORY:VERSION`
+> `REPOSITORY := [REGISTRY_IP/]REPOSITORY_NAME`
 
 #### Fetching checkpoints ####
 The checkpoints registry should allow this kind of basic queries: `IMAGE_TAG -> [NODE_1, ..., NODE_N]`, plus, for previous versions of the same service: `(IMAGE_TAG, USER_ID) -> [(TIMESTAMP_1, NODE_1), ..., (TIMESTAMP_M, NODE_M)]`.
@@ -169,8 +172,6 @@ In general, it is up to the chosen policy how the retrieved values are used to d
 #### Updating the checkpoints registry ####
 The `IMAGE_TAG` set needs to be updated for every incoming migration, while for outcoming ones a new checkpoint version needs to be added to the `SERVICE_GUID` set together with its timestamp.
 
-> If the same node is visited more than once through a series of migrations, the timestamp value would simply be updated, which is coherent with the expected behavior.
-
 ```
 function updateCheckptRegistry {
 	[ $# -eq 5 ] && { local RHOST="-h $1"; shift; }
@@ -185,6 +186,8 @@ function updateCheckptRegistry {
 	redis-cli --raw ${RHOST:-} ZADD "$IMAGE_TAG${KEY:-}" $SCORE "$VALUE"
 }
 ```
+
+> If the same node is visited more than once through a series of migrations, the timestamp value would simply be updated, which is coherent with the expected behavior.
 
 ##### Implementation final notes #####
 From [ZADD – Redis](https://redis.io/commands/zadd):
@@ -266,7 +269,7 @@ rsyncFrom $SOURCE "$REMOTE_VOL_BACKUPS/" "$VOL_BACKUPS"
 ```
 # 2.3 transfer checkpoint
 mkdir -p "$CHECKPT_DIR"
-fetchCheckpt "$IMAGE" "$USER_ID" && tar xf "$IMAGE.tar" -C "$CHECKPT_DIR"
+fetchCheckpt "$IMAGE" "$USER_ID" && tar xf "./$IMAGE.tar" -C "$CHECKPT_DIR" --force-local
 
 CHECKPOINT=$(date +%F_%H-%M-%S)
 ssh $SOURCE "docker checkpoint create $CONTAINER $CHECKPOINT --checkpoint-dir=\"$REMOTE_CHECKPT_DIR\" --leave-running"
@@ -322,6 +325,14 @@ The destination needs to have its own local Registry and, for the sake of this e
 ls -l /volume_archives
 sudo rm -ri /volume_archives
 ```
+
+#### Starting the migration ####
+At the destination, run:
+
+```
+csm_dest.sh <SOURCE> <CONTAINER> <USER_ID> <REGISTRY> <REDIS_HOST>
+```
+In this case `<REGISTRY>` and `<REDIS_HOST>` would be the master IP address.
 
 ## From centralized to distributed ##
 Up to now, we have implicitly assumed the presence of a Docker Registry and of a Redis instance with volumes and checkpoints "registries" every node could refer to for queries and updates.

@@ -14,16 +14,6 @@ SOURCE=$1
 CONTAINER=$2
 REGISTRY_TAG=$3 	# if not given, try to use $SOURCE/$IMAGE
 
-# given a container, find out which image it is using
-IMAGE_FULL=$(ssh $SOURCE "docker container inspect $CONTAINER -f '{{.Config.Image}}'")
-IMAGE=$(echo $IMAGE_FULL | cut -d/ -f2)
-IMAGE_REPO=$(echo $IMAGE | cut -d: -f1)
-IMAGE_TAG=$(echo $IMAGE | cut -d: -f2)
-
-if [ $# -lt 3 ]; then
-	REGISTRY_TAG="$SOURCE/$IMAGE"
-fi
-
 
 # -------------------------------- FUNCTIONS --------------------------------
 function error_exit {
@@ -61,6 +51,27 @@ function rsyncFrom {
 
 function get_label_value {
 	[[ "$2" =~ (=|,)$1=([^,]+)(,|$) ]] && echo ${BASH_REMATCH[2]}
+}
+
+function getContainerImage {
+	local full=$(ssh $1 "docker container inspect $2 -f '{{.Config.Image}}'")
+	
+	local reg=""
+	if [[ "$full" =~ / ]]; then
+		reg=$(echo $full | cut -d/ -f1)
+	fi
+	local image=$(echo $full | cut -d/ -f2)
+	local repo=$(echo $image | cut -d: -f1)
+	local vers="latest"
+	if [[ "$image" =~ : ]]; then
+		vers=$(echo $image | cut -d: -f2)
+	fi
+	
+	echo $full $image $repo $vers $reg
+}
+
+function echoDebug {
+	[ $DEBUG_MODE ] && echo -e "$@\n"
 }
 # ----------------------------------------------------------------
 
@@ -106,8 +117,16 @@ done
 WORKDIR=$UUID
 ! mkdir $WORKDIR || ! cd $WORKDIR && error_exit "try again"
 
-echo "Directory changed to: $(pwd)"
+echoDebug "Directory changed to: $(pwd)"
 # ----------------------------------------------------------------
+
+
+# given a container, find out which image it is using
+read IMAGE_FULL IMAGE IMAGE_REPO IMAGE_TAG IMAGE_REG < <(getContainerImage $SOURCE $CONTAINER)
+
+if [ $# -lt 3 ]; then
+	REGISTRY_TAG="$SOURCE/$IMAGE"
+fi
 
 
 # 2.1 transfer container image
@@ -127,6 +146,8 @@ fi
 # get volumes list
 ssh $SOURCE "$REMOTE_SH_DIR/get_volumes_list.sh $CONTAINER" > "$VOL_LIST"
 
+echoDebug "Volumes list written to: $VOL_LIST"
+
 # filter read-only volumes already present at the destination
 # and run utility container (at the source) to backup the content of the others
 mkdir "$VOL_BACKUPS" 	# dir for volume archives
@@ -139,20 +160,26 @@ while read name destination rw labels options; do
 		[ $rw_guid ] || error_exit "Writable volume $name has no GUID"
 		if [ -e "$archpath" ]; then
 			cp "$archpath" "$VOL_BACKUPS/$name.tar"
+			echoDebug "Volume $name found locally: $archpath"
 		fi
 	else
 		ro_guid=$(b64url_encode "$IMAGE$destination")
 		archpath="$VOL_ARCHIVES/ro.${ro_guid}.tar"
 		if [ -e "$archpath" ]; then
 			cp "$archpath" "$VOL_BACKUPS/$name.tar"
+			echoDebug "Volume $name found locally: $archpath"
 		else
 			echo $name "$destination" 	# ro volumes not already in $VOL_ARCHIVES
 		fi
 	fi
 done < "$VOL_LIST" | ssh $SOURCE "$REMOTE_SH_DIR/run_utilc_voltotar.sh $CONTAINER $REMOTE_VOL_BACKUPS"
 
+echoDebug "Content of $VOL_BACKUPS: " $(for f in $(ls "$VOL_BACKUPS"); do wc -c "$VOL_BACKUPS/$f"; done)
+
 # rsync volume archives
 rsyncFrom $SOURCE "$REMOTE_VOL_BACKUPS/" "$VOL_BACKUPS"
+
+echoDebug "Content of $VOL_BACKUPS after sync: " $(for f in $(ls "$VOL_BACKUPS"); do wc -c "$VOL_BACKUPS/$f"; done)
 
 # run utility container to create the volumes and extract the content of the archives
 VOLNAMES=()
@@ -181,8 +208,8 @@ while read name destination rw labels options; do
 done < "$VOL_LIST"
 
 # debug
-echo "Mounting (RW): $MOUNTSTR"
-echo "Mounting (RO): $MOUNTSTR_RO"
+echoDebug "Mounting (RW): $MOUNTSTR"
+echoDebug "Mounting (RO): $MOUNTSTR_RO"
 # echo ${VOLNAMES[@]}
 # echo ${VOLNAMES_RO[@]}
 
@@ -198,9 +225,9 @@ UCONT_ID_RO=$(docker run -d \
 
 # 2.3 transfer checkpoint
 mkdir -p "$CHECKPT_DIR"
-CHECKPOINT=$(date +%F_%H-%M-%S) 	# (e.g. 2020-01-06_08-09-15)
 
 # leave running
+CHECKPOINT=$(date +%F_%H-%M-%S) 	# (e.g. 2020-01-06_08-09-15)
 # ################ SECURITY ALERT ################
 echo "$PASSWD" | ssh -tt $SOURCE "$REMOTE_SH_DIR/criu_checkpoint.sh $CONTAINER $CHECKPOINT $REMOTE_CHECKPT_DIR"
 # ################ SECURITY ALERT ################
@@ -214,10 +241,7 @@ TARGET_CONTAINER=$(docker create \
 	--volumes-from $UCONT_ID_RO:ro \
 	$REGISTRY_TAG) 	# use pulled image
 
-if [ $DEBUG_MODE ]; then
-	echo "Debug mode ON: waiting a few seconds..."
-	sleep 5
-fi
+echoDebug "Waiting a few seconds..." && sleep 5
 
 
 # 3. stop container and 4.1 send checkpoint difference
@@ -227,6 +251,8 @@ ssh $SOURCE "docker checkpoint create $CONTAINER $CHECKPOINT_F --checkpoint-dir=
 # ################ SECURITY ALERT ################
 echo "$PASSWD" | ssh -tt $SOURCE "sudo chown \$USER $REMOTE_CHECKPT_DIR/$CHECKPOINT_F"
 # ################ SECURITY ALERT ################
+
+echoDebug "Sync remote $REMOTE_CHECKPT_DIR/$CHECKPOINT_F content with local $CHECKPT_DIR"
 
 rsyncFrom $SOURCE "$REMOTE_CHECKPT_DIR/$CHECKPOINT_F/" "$CHECKPT_DIR" "-acz --delete" || error_exit "final checkpoint rsync"
 sudo cp -r "$CHECKPT_DIR/" "/var/lib/docker/containers/$TARGET_CONTAINER/checkpoints/$CHECKPOINT_F"
@@ -240,7 +266,7 @@ done < "$VOL_LIST" | ssh $SOURCE "$REMOTE_SH_DIR/run_utilc_voltotar.sh $CONTAINE
 CHANGED_VOLS=$(rsyncFrom $SOURCE "$REMOTE_VOL_BACKUPS/" "$VOL_BACKUPS" "-acz --out-format=%n")
 
 # debug
-echo "CHANGED_VOLS=$CHANGED_VOLS"
+echoDebug "Writable volumes changed: $CHANGED_VOLS"
 
 # wait for termination
 docker container wait $UCONT_ID $UCONT_ID_RO
@@ -261,24 +287,26 @@ docker start --checkpoint=$CHECKPOINT_F $TARGET_CONTAINER && echo -e '\n\nSUCCES
 
 
 # -------------------------------- CLEAN UP --------------------------------
+echoDebug "Starting clean up operations..."
+
 # sync local repo dir ($VOL_ARCHIVES) with all volume archives
 # we need to rename them first
 while read name dest rw labels rest; do
 	archfile="$VOL_BACKUPS/$name.tar"
 	if [ -f "$archfile" ]; then
-		echo "found file: $archfile"
+		echoDebug "found file: $archfile"
 		if [ $rw = "true" ]; then
 			rw_guid=$(get_label_value "$RW_GUID_KEY" "$labels")
-			echo "it is RW, with guid: $rw_guid"
+			echoDebug "it is RW, with guid: $rw_guid"
 			if [ $rw_guid ]; then
 				mv "$archfile" "$VOL_BACKUPS/rw.${rw_guid}.tar"
 			else
-				echo "No guid for $archfile"
+				echoDebug "No guid for $archfile"
 				rm "$archfile"
 			fi
 		else
 			ro_guid=$(b64url_encode "$IMAGE$dest")
-			echo "it is RO, with guid: $ro_guid"
+			echoDebug "it is RO, with guid: $ro_guid"
 			mv "$archfile" "$VOL_BACKUPS/ro.${ro_guid}.tar"
 		fi
 	fi
