@@ -14,7 +14,6 @@ fi
 
 TO_HOST=$1
 REGISTRY_TAG=$2
-USER='ubu2admin' # if the same it can be omitted
 
 if [ $# -eq 3 ]; then
 	CONTAINER=$3
@@ -44,13 +43,13 @@ docker push $REGISTRY_TAG
 
 
 # ################ execute script on peer ################
-ssh $USER@$TO_HOST "docker pull $REGISTRY_TAG"
+ssh $TO_HOST "docker pull $REGISTRY_TAG"
 
 # (check result)
-# ssh $USER@$TO_HOST "docker image ls"
+# ssh $TO_HOST "docker image ls"
 
 # start container from image
-ssh $USER@$TO_HOST "docker run -d -p 8080:8080 $REGISTRY_TAG"
+ssh $TO_HOST "docker run -d -p 8080:8080 $REGISTRY_TAG"
 # TODO: generic port mapping
 
 # (stop container at the source)

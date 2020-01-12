@@ -49,7 +49,7 @@ update-ca-certificates
 	# -e REGISTRY_HTTP_TLS_KEY=/certs/domain.key \
 	# -p 443:443 \
 	# --restart=unless-stopped \
-	# -v /home/ubu2admin/registry:/var/lib/registry \
+	# -v "$(pwd)/registry":/var/lib/registry \
 	# --name sec_registry \
 	# registry:2
 # ################ ################ ################ ################

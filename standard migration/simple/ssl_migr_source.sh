@@ -14,7 +14,6 @@ if [ $# -ne 2 ] && [ $# -ne 3 ]; then
 fi
 
 TO_HOST=$1
-USER='ubu2admin' # if the same it can be omitted
 
 if [ $# -eq 2 ]; then
 	CONTAINER=$2
@@ -50,7 +49,7 @@ docker save -o $LOCAL_PATH $IMAGE_TAG
 # (no volumes)
 
 # send backup to destination
-scp $LOCAL_PATH $USER@$TO_HOST:$REMOTE_DIR
+scp $LOCAL_PATH $TO_HOST:$REMOTE_DIR
 
 # TODO: docker save and backup send operations may be pipelined (not with scp, though [?])
 # similar pipeline with reception and docker load
@@ -58,17 +57,17 @@ scp $LOCAL_PATH $USER@$TO_HOST:$REMOTE_DIR
 
 # ################ execute script on peer ################
 # load image from tar
-ssh $USER@$TO_HOST "docker load -i ${REMOTE_DIR}${TAR_NAME}"
+ssh $TO_HOST "docker load -i ${REMOTE_DIR}${TAR_NAME}"
 
 # (check result)
-ssh $USER@$TO_HOST "docker image ls"
+ssh $TO_HOST "docker image ls"
 
 # start container from image
-ssh $USER@$TO_HOST "docker run -d -p 8080:8080 $IMAGE_TAG"
+ssh $TO_HOST "docker run -d -p 8080:8080 $IMAGE_TAG"
 # TODO: generic port mapping
 
 # (clean up)
-ssh $USER@$TO_HOST "rm ${REMOTE_DIR}${TAR_NAME}"
+ssh $TO_HOST "rm ${REMOTE_DIR}${TAR_NAME}"
 # or keep it for future uses (migrations FROM this node)
 
 # (stop container at the source)

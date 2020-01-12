@@ -11,7 +11,7 @@
 if [ $# -ne 1 ]; then
 	docker run -d \
 		-p 5000:5000 \
-		-v /home/ubu2admin/registry:/var/lib/registry \
+		-v "$(pwd)/registry":/var/lib/registry \
 		--restart=unless-stopped \
 		--name registry \
 		registry:2
@@ -49,7 +49,7 @@ fi
 
 # By default, registry data is persisted as a docker volume on the host filesystem
 # you can choose to use a bind-mount instead
-# -v /home/ubu2admin/registry:/var/lib/registry \
+# -v /home/USER/registry:/var/lib/registry \
 
 # https://hub.docker.com/_/registry?tab=tags
 # TAG				DIGEST				OS/ARCH

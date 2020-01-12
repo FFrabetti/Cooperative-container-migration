@@ -218,3 +218,39 @@ The sub-steps of 3. described above are implemented as follows:
 		-H "Content-Type: application/vnd.docker.distribution.manifest.v2+json" \
 		--data @"$MANIFEST_FILE"
    ```
+
+### Example ###
+In order to test if we can actually push a container image to a Registry layer by layer (after checking that they are not already present), we can build a very simple image at the source:
+
+```
+DIR=$(mktemp -d)
+cd "$DIR"
+
+for i in $(seq 1 1000); do
+	echo "Lorem ipsum dolor sit amet $i" >> layerfile
+done
+
+{
+	echo "FROM busybox"
+	echo "COPY layerfile ."
+} > Dockerfile
+
+docker build -t "$REGISTRY/$REPO:$VERS" .
+docker push "$REGISTRY/$REPO:$VERS"
+```
+where `REGISTRY`, `REPO` and `VERS` need to be configured.
+
+Then, at the destination:
+
+```
+tmp_registry.sh 	# start an insecure Registry at localhost:5000
+cpull_image_dest.sh https://$SOURCE $REPO:$VERS https://$SOURCE localhost:5000
+
+docker run --rm localhost:5000/$REPO:$VERS /bin/sh -c 'cat layerfile | tail'
+
+tmp_registry.sh stop
+docker image rm localhost:5000/$REPO:$VERS
+```
+with the same values used before assigned to `SOURCE`, `REPO` and `VERS`.
+
+Details about [cpull_image_dest.sh](../cooperative%20migration/cpull_image_dest.sh) are given [here](cooperative%20migration.md#example).

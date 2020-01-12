@@ -240,3 +240,35 @@ python3 notifications_endpoint.py PORT | mosquitto_pub -d -l -t TOPIC
 Thanks to the de-coupling present in the architecture of the original example between the HTTP server (in Python) and the script that implements the Registry update logic (in bash), nothing else needs to be changed.
 
 > At default, the least QoS level (0) is used, which means that messages are delivered without acks or retransmissions, in favor of lower latency. An optional _retention_ flag can be set for periodic updates to prevent messages already delivered to all subscribers from being immediately discarded: in this way, in case of a new subscription, the broker can send the "last known good" value without having to wait for the next update cycle.
+
+## Example ##
+At the end of the day, we are interested in what happens during a migration, while control messages and Registry updates can be considered as a separate problem by themselves.
+Therefore, we go back to the same example proposed [here](traditional%20migration.md#example) but for cooperative migration.
+
+> The scripts introduced below refer to the centralized scenario where a Registry with all the images of the cluster is running at the master, but if we move the Registry to either the source or, in case, the destination, everything works as fine.
+
+A [script](../cooperative%20migration/cm_example_source.sh) to be executed at the source allows us to easily build, tag and push the container image to the Registries present at the source and at the master (previously started).
+
+```
+cm_example_source.sh $SOURCE $REPO $VERS $MASTER
+```
+We are again using the same two-layer-image introduced in the other example, with the master Registry configured as follows:
+- top-most layer: available just through the source
+- bottom layer: available both at the source and at the master
+
+At the destination:
+
+```
+tmp_registry.sh 	# start an insecure Registry at localhost:5000
+cpull_image_dest.sh https://$SOURCE $REPO:$VERS https://$MASTER localhost:5000
+
+docker run --rm localhost:5000/$REPO:$VERS /bin/sh -c 'cat layerfile | tail'
+
+tmp_registry.sh stop
+docker image rm localhost:5000/$REPO:$VERS
+```
+
+> [cpull_image_dest.sh](../cooperative%20migration/cpull_image_dest.sh) would try to fetch missing layers from the first URL obtained from the manifest returned by the master, using the master itself as a source if the `"urls"` field is empty.
+> This is the reason why in the [traditional migration example](traditional%20migration.md#example) the third argument was again `https://$SOURCE`.
+
+> Note that by using the same arguments of the traditional case, but with a properly configured Registry at the source (for example), you can fetch layers from multiple nodes without requiring a third (master) node.
