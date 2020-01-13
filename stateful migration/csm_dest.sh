@@ -4,29 +4,24 @@
 # $1 := <SOURCE>
 # $2 := <CONTAINER>
 # $3 := <USER_ID>
-# $4 := [<REGISTRY>]
-# $5 := [<REDIS_HOST>]
+# $4 := <MASTER_REGISTRY>
+# $5 := <REDIS_HOST>
+# $6 := <LOCAL_REGISTRY>
 
-if [ $# -lt 3 ] || [ $# -gt 5 ]; then
-	echo "Usage: $0 SOURCE CONTAINER USER_ID [REGISTRY] [REDIS_HOST]"
+if [ $# -ne 6 ]; then
+	echo "Usage: $0 SOURCE CONTAINER USER_ID REGISTRY REDIS_HOST LOCAL_REGISTRY"
 	exit 1
 fi
 
 SOURCE=$1
 CONTAINER=$2
 USER_ID=$3
-# if not given, try to use local registries
 REGISTRY=$4
 REDIS_HOST=$5
-
+LOCAL_REGISTRY=$6
 
 # -------------------------------- FUNCTIONS --------------------------------
 source $(dirname "$0")/redis-functions.sh
-
-function fetchLayers { 	# (parallel)
-	# TODO
-	echo "fetchLayers"
-}
 
 function fetchVolume { 	# (parallel) RW and RO not already present
 	local name="$1"
@@ -56,12 +51,6 @@ function error_exit {
 	fi
 	echo "Error: $errMsg"
 	exit 1
-}
-
-function curl_test_ok {
-	# -s silent, -L follow redirects, -I HEAD, -w custom output format, -o redirect HTML
-	# see also: --connect-timeout <CT>, --max-time <MT>
-	[ $(curl -sLI -w '%{http_code}' "$1" -o /dev/null) == "200" ]
 }
 
 function b64url_encode {
@@ -107,22 +96,6 @@ function echoDebug {
 	[ $DEBUG_MODE ] && echo -e "$@\n"
 }
 # ----------------------------------------------------------------
-
-
-for ip in $(hostname -I); do
-	if curl_test_ok "https://$ip/v2/"; then
-		LOCAL_REGISTRY=$ip
-	fi
-done
-[ $LOCAL_REGISTRY ] || error_exit "No local Registry found"
-
-if [ $# -lt 4 ]; then
-	REGISTRY=$LOCAL_REGISTRY
-fi
-
-if [ $# -lt 5 ]; then
-	REDIS_HOST="127.0.0.1"
-fi
 
 
 # -------------------------------- SETUP --------------------------------
@@ -178,19 +151,7 @@ read IMAGE_FULL IMAGE IMAGE_REPO IMAGE_TAG IMAGE_REG < <(getContainerImage $SOUR
 
 
 # 2.1 transfer container image
-# TODO: loop fetchLayers ... & 	# then wait
-docker pull "$IMAGE_FULL" 	# for now, pull it from where the source got it from
-# should it be forced from the master? $REGISTRY/$IMAGE
-
-echoDebug "Fetched container image: $IMAGE_FULL"
-
-# push to local registry
-if [ ! "$REGISTRY" = "$LOCAL_REGISTRY" ]; then
-	docker tag "$IMAGE_FULL" "$LOCAL_REGISTRY/$IMAGE"
-	docker push "$LOCAL_REGISTRY/$IMAGE"
-	
-	echoDebug "Image pushed to $LOCAL_REGISTRY/$IMAGE"
-fi
+cpull_image_dest.sh https://$SOURCE $IMAGE $REGISTRY $LOCAL_REGISTRY &  	# background
 
 # 2.2 transfer volumes
 # get volumes list
@@ -210,7 +171,6 @@ while read name destination rw labels options; do
 		[ $rw_guid ] || error_exit "Writable volume $name has no GUID"
 		if [ -e "$archpath" ]; then
 			cp "$archpath" "$VOL_BACKUPS/$name.tar"
-			echoDebug "Volume $name found locally: $archpath"
 		else
 			fetchVolume "$name" "rw" "$rw_guid" & 	# background
 		fi
@@ -219,7 +179,6 @@ while read name destination rw labels options; do
 		archpath="$VOL_ARCHIVES/ro.${ro_guid}.tar"
 		if [ -e "$archpath" ]; then
 			cp "$archpath" "$VOL_BACKUPS/$name.tar"
-			echoDebug "Volume $name found locally: $archpath"
 		else
 			if volumeSetNotEmpty "$name" "ro" "$ro_guid"; then
 				fetchVolume "$name" "ro" "$ro_guid" & 	# background
@@ -235,7 +194,7 @@ wait
 
 echoDebug "Content of $VOL_BACKUPS: " $(for f in $(ls "$VOL_BACKUPS"); do wc -c "$VOL_BACKUPS/$f"; done)
 
-# rsync volume archives
+# rsync volume backups
 rsyncFrom $SOURCE "$REMOTE_VOL_BACKUPS/" "$VOL_BACKUPS"
 
 echoDebug "Content of $VOL_BACKUPS after sync: " $(for f in $(ls "$VOL_BACKUPS"); do wc -c "$VOL_BACKUPS/$f"; done)

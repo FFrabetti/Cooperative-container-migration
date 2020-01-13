@@ -160,14 +160,12 @@ while read name destination rw labels options; do
 		[ $rw_guid ] || error_exit "Writable volume $name has no GUID"
 		if [ -e "$archpath" ]; then
 			cp "$archpath" "$VOL_BACKUPS/$name.tar"
-			echoDebug "Volume $name found locally: $archpath"
 		fi
 	else
 		ro_guid=$(b64url_encode "$IMAGE$destination")
 		archpath="$VOL_ARCHIVES/ro.${ro_guid}.tar"
 		if [ -e "$archpath" ]; then
 			cp "$archpath" "$VOL_BACKUPS/$name.tar"
-			echoDebug "Volume $name found locally: $archpath"
 		else
 			echo $name "$destination" 	# ro volumes not already in $VOL_ARCHIVES
 		fi
@@ -176,7 +174,7 @@ done < "$VOL_LIST" | ssh $SOURCE "$REMOTE_SH_DIR/run_utilc_voltotar.sh $CONTAINE
 
 echoDebug "Content of $VOL_BACKUPS: " $(for f in $(ls "$VOL_BACKUPS"); do wc -c "$VOL_BACKUPS/$f"; done)
 
-# rsync volume archives
+# rsync volume backups
 rsyncFrom $SOURCE "$REMOTE_VOL_BACKUPS/" "$VOL_BACKUPS"
 
 echoDebug "Content of $VOL_BACKUPS after sync: " $(for f in $(ls "$VOL_BACKUPS"); do wc -c "$VOL_BACKUPS/$f"; done)

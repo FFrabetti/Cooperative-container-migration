@@ -286,7 +286,13 @@ For this first example, all these elements will be hosted on the master.
 #### Master setup ####
 
 ##### Docker Registry #####
-TODO
+Once the container image has been built at the source and pushed to its local Registry ([see here](traditional%20stateful%20migration.md#example)), we need to update the Registry running at the master so it can provide the right information to the destination about where to find each layer.
+
+For that, we can re-use the same [setup script](../cooperative%20migration/cm_example_source.sh) created for the stateless example:
+
+```
+cm_example_source.sh $SOURCE $REPO $VERS $MASTER
+```
 
 ##### Redis server #####
 1. Start a Redis instance:
@@ -322,17 +328,22 @@ At the source, the migrating container has to be running (check with `docker con
 
 The destination needs to have its own local Registry and, for the sake of this experiment, it should also have an empty `VOL_ARCHIVES`:
 ```
+tmp_registry.sh 	# start an insecure Registry at localhost:5000
 ls -l /volume_archives
-sudo rm -ri /volume_archives
+sudo rm -ri /volume_archives/* 	# prompt before every removal
+
+...
+
+tmp_registry.sh stop
 ```
 
 #### Starting the migration ####
 At the destination, run:
 
 ```
-csm_dest.sh <SOURCE> <CONTAINER> <USER_ID> <REGISTRY> <REDIS_HOST>
+csm_dest.sh <SOURCE> <CONTAINER> <USER_ID> <REGISTRY> <REDIS_HOST> <LOCAL_REGISTRY>
 ```
-In this case `<REGISTRY>` and `<REDIS_HOST>` would be the master IP address.
+In this case `<REGISTRY>` (e.g. `https://<MASTER_ADDR>`) and `<REDIS_HOST>` both refer to the master.
 
 ## From centralized to distributed ##
 Up to now, we have implicitly assumed the presence of a Docker Registry and of a Redis instance with volumes and checkpoints "registries" every node could refer to for queries and updates.

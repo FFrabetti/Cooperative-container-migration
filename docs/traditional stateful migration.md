@@ -143,6 +143,7 @@ Set up:
 
    ```
    FROM busybox
+   COPY layerfile .
    CMD ["/bin/sh", "-c", "i=0; while true; do echo $i | tee -a /testrw/counter; i=$((i+1)); sleep 1; done"]
    ```
    
@@ -150,6 +151,10 @@ Set up:
    
    ```
    # cd in the directory with Dockerfile
+   for i in $(seq 1 1000); do
+		echo "Lorem ipsum dolor sit amet $i" >> layerfile
+   done
+   
    docker build -t <REGISTRY_ADDR>/testtsm:0.1 .
    docker push <REGISTRY_ADDR>/testtsm:0.1
    ```

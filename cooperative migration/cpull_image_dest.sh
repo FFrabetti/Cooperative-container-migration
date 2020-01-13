@@ -65,7 +65,8 @@ for d in $(getLayersDigests < "$MANIFEST_FILE"); do
 
 		# for each new layer: parse JSON and get an URL (chosen with a certain policy)
 		{
-			url=$(python3 get_url_from_digest.py $d < "$MANIFEST_FILE")
+			GUFD_PY=$(which get_url_from_digest.py)
+			url=$(python3 "$GUFD_PY" $d < "$MANIFEST_FILE")
 			if [ ! $url ]; then 	# fallback from the CENTRAL_REGISTRY
 				url="$CENTRAL_REGISTRY/v2/$REPO/blobs"
 				echo "No URL found, using $url"
