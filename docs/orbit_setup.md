@@ -31,6 +31,49 @@ For both these cases, we evaluate following schemes.
 omf load -i containerlm1.ndz -t all
 omf tell -a on -t all
 ```
+
+The image containerlm1.ndz is created as follows:
+
+a. Load baseline image for Ubuntu 16.04 on the ORBIT testbed (used SB4 here and using node1-1 as a playground to create the final image):
+```
+omf load -i baseline.ndz -t node1-1
+```
+b. SSH to the node1-1 from SB4 console:
+```
+ssh root@node1-1
+```
+c. Install CRIU version 2.6 on the node1-1:
+```
+sudo apt-get update
+sudo apt-get install criu
+```
+d. Install Docker version 19.03.5 on the node1-1:
+```
+$ sudo apt-get update
+$ sudo apt-get install \
+    apt-transport-https \
+    ca-certificates \
+    curl \
+    software-properties-common
+$ curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+$ sudo apt-key fingerprint 0EBFCD88
+$ sudo add-apt-repository \
+   "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+   $(lsb_release -cs) \
+   stable"
+$ sudo apt-get update
+$ sudo apt-get install docker-ce
+```
+e. Run the prepare script at the node1-1 to make it ready for imaging:
+```
+$ bash prepare.sh
+```
+f. From the console of SB4, run the following command to save the image:
+```
+$ omf save -n node1-1.sb4.orbit-lab.org
+```
+g. The image is saved. Note down the name of the image. 
+
 3. Login to the node1-1 and node1-2 to run the set-up script:
 ```
 ssh root@node1-1
