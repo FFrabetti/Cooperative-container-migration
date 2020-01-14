@@ -36,7 +36,7 @@ The image containerlm1.ndz is created as follows:
 
 a. Load baseline image for Ubuntu 16.04 on the ORBIT testbed (used SB4 here and using node1-1 as a playground to create the final image):
 ```
-omf load -i baseline.ndz -t node1-1
+omf load -i baseline-ubuntu-16-04-64bit.ndz -t node1-1
 ```
 b. SSH to the node1-1 from SB4 console:
 ```
