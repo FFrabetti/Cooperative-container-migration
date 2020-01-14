@@ -21,8 +21,8 @@ Read more about ORBIT [here](http://www.orbit-lab.org).
 
 For both these cases, we evaluate following schemes.
 - Centralized Traditional Container Migration (CTCM)
-- Centralized Cooperative Container Migration (CLCM)
-- Distributed Cooperative Container Migration (DLCM)
+- Centralized Cooperative Container Migration (CCCM)
+- Distributed Cooperative Container Migration (DCCM)
 
 ## Procedure ##
 1. Reserve resources on the ORBIT. We use SB4 for the tests and Grid for final evaluation. 
