@@ -13,7 +13,9 @@ Research conducted at Winlab, Rutgers University (NJ, USA).
   - [Stateful](docs/stateful%20migration.md)
     - [Traditional stateful migration](docs/traditional%20stateful%20migration.md)
     - [Cooperative stateful migration](docs/cooperative%20stateful%20migration.md)
-- Multi-cluster
+- [Multi-cluster](docs/multi-cluster.md)
+  - [Stateless](docs/multi-cluster_stateless.md)
+  - [Stateful](docs/multi-cluster_stateful.md)
 
 - [Orchestrating migrations](docs/orchestration.md)
 

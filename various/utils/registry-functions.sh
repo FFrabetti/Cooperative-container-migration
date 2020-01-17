@@ -128,3 +128,9 @@ function pushManifest { # REGISTRY REPO VERS [FROM_FILE]
 	-H "Content-Type: application/vnd.docker.distribution.manifest.v2+json" \
 	--data "$mfile"
 }
+
+function getRepoTags {
+	curl -sS "$1/v2/$2/tags/list" | python3 -c "import sys, json;
+for t in json.load(sys.stdin)['tags']:
+	print(t)"
+}
