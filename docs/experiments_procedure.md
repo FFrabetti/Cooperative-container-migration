@@ -24,6 +24,11 @@ For each of the above, we have 3 schemes:
 - **Centralized Cooperative Container Migration** (CCCM)
 - **Distributed Cooperative Container Migration** (DCCM)
 
+### Nodes configuration ###
+Copy all scripts, i.e. all `.sh` and `.py` files, in a directory included in the `PATH` (e.g. `~/bin`).
+
+Set `eth0` and channel characteristics (delay, bw, ...).
+
 ## Single cluster ##
 ### Stateless ###
 #### Stateless CTCM ####

@@ -28,7 +28,7 @@ For both these cases, we evaluate following schemes.
 1. Reserve resources on the ORBIT. We use SB4 for the tests and Grid for final evaluation. 
 2. Load the image to bring up Docker, CRIU and other dependencies:
 ```
-omf load -i containerlm1.ndz -t all
+omf load -i containerlm.ndz -t all
 omf tell -a on -t all
 ```
 
@@ -64,15 +64,20 @@ $ sudo add-apt-repository \
 $ sudo apt-get update
 $ sudo apt-get install docker-ce
 ```
-e. Run the prepare script at the node1-1 to make it ready for imaging:
+e. Install additional required packages (like the one for `mpstat`)
+```
+sudo apt-get install sysstat
+```
+
+f. Run the prepare script at the node1-1 to make it ready for imaging:
 ```
 $ bash prepare.sh
 ```
-f. From the console of SB4, run the following command to save the image:
+g. From the console of SB4, run the following command to save the image:
 ```
 $ omf save -n node1-1.sb4.orbit-lab.org
 ```
-g. The image is saved. Note down the name of the image. 
+h. The image is saved. Note down the name of the image (and eventually re-name it, or create a link called `containerlm.ndz`).
 
 3. Login to the node1-1 and node1-2 to run the set-up script:
 ```
@@ -83,4 +88,21 @@ The setup script will create executables in the /root/bin directory.
 
 4. Follow the steps listed on the [this page](../docs/trafficgen.md) to test different applications.
 
+## Collecting measurements ##
+Each machine has two wired network interfaces: `eth0` and `eth1`. We are using the latter for control traffic related to the experiment (ssh, messages exchanged with the `console`, etc.), and the former for the experiment itself.
 
+For each node, we are monitoring its workload with `mpstat` every second and the traffic through `eth0` with `tcpdump`, so we can later plot time-dependent graphs of them.
+
+```
+measureLoad.sh loadTime_in_seconds fileName
+```
+To append to the given file the idle percentage (with timestamp) every period.
+
+```
+measureTrafficIn.sh
+measureTrafficOut.sh
+```
+They write to `testin.txt` (or `testout.txt`) the output of `tcpdump` on `eth0` for in/out-ward traffic.
+
+## Change load and channel characteristics ##
+TODO (load, delay, bw, error rate)
