@@ -29,10 +29,10 @@ shift
 SWARM_INIT=$(mktemp)
 docker swarm init --advertise-addr $MASTER > $SWARM_INIT
 
-ssh $PEER $(docker swarm join-token manager | grep 'join --token')
+ssh $PEER "$(docker swarm join-token manager | grep 'join --token')"
 
 while (( $# )); do
-	ssh $1 $(cat $SWARM_INIT | grep 'join --token')
+	ssh $1 "$(cat $SWARM_INIT | grep 'join --token')"
 	shift
 done
 
@@ -43,3 +43,17 @@ docker network create -d overlay --attachable clusterA
 docker network create -d overlay --attachable clusterB
 
 docker network ls
+
+
+# #### clean up ####
+# docker network rm proxyntwAB clusterA clusterB
+# docker network ls
+
+# for n in $(docker node ls --format '{{if not .Self}}{{.ID}}{{end}}'); do
+	# docker node update --availability drain $n
+	# addr=$(docker node inspect $n --format '{{.Status.Addr}}')
+	# ssh $addr "docker swarm leave --force"
+# done
+
+# docker node ls
+# docker swarm leave --force

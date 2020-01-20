@@ -22,5 +22,7 @@ Research conducted at Winlab, Rutgers University (NJ, USA).
 - Experimentation
   - [Test application](docs/trafficgen.md)
   - [Orbit setup](docs/orbit_setup.md)
+    - [Network configuration (for non-Orbit experiments)](docs/configuration.md)
+    - [Configure the Registry for TLS](docs/registry_config.md)
   - [Procedure](docs/experiments_procedure.md)
   - Results

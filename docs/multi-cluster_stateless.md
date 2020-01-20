@@ -14,7 +14,10 @@ Copies of the content are always cached at all intermediate proxies. A policy fo
 
 ## Implementation ##
 
+The same REST API used by the Registry is used by the two proxies, with synchronous HTTP requests carrying the name of the repository and the digest of the layer to be fetched.
+
 ### SourceProxy ###
+A simple HTTP server/client has been implemented in Python, with 3 required arguments (`port`, `cache_dir`, `peer_proxy`) and whose core business logic is reported here:
 
 ```
 def respond(self):
@@ -34,6 +37,7 @@ def respond(self):
 [source_proxy.py](../multi-cluster/source_proxy.py)
 
 ### DestinationProxy ###
+Symmetrically, the other side requires as arguments: `port`, `cache_dir` and `registry`.
 
 ```
 def respond(self):
@@ -53,9 +57,10 @@ def respond(self):
 ```
 [dest_proxy.py](../multi-cluster/dest_proxy.py)
 
-### Layers metadata off-line exchange ###
-`DestinationProxy` has to transmit to its peer which layers can be found in its cluster. The cluster-level Registry would already have all the data about that, organized in the image manifests.
+[dp_fetch_layer.sh](../multi-cluster/dp_fetch_layer.sh)
 
+### Layers metadata off-line exchange ###
+`DestinationProxy` has to transmit to its peer which layers can be found in its cluster. The cluster-level Registry (or its own local Registry, for the fully distributed scenario) would already have all the data about them, organized in the image manifests.
 `SourceProxy` has to receive this information and publish it to its cluster's Registry under its own address, optionally together with the "total cost" to retrieve each layer.
 
 An implementation of such mechanisms is already available in [cpull_migr_master.sh](../cooperative%20migration/cpull_migr_master.sh) (used for the [centralized pull scenario](cooperative%20migration.md#pull-based-approach)), to be executed as follows:
@@ -63,28 +68,31 @@ An implementation of such mechanisms is already available in [cpull_migr_master.
 cpull_migr_master.sh DEST_CLSTR_REGISTRY PERIOD WORK_DIR SRC_CLSTR_REGISTRY
 ```
 
+> The assumption is that the entity executing the script can reach both Registries. This implementation can, however, easily be adapted to include a proper exchange protocol between the two proxies, if needed.
+
+> In our simple version, the cost of each layer is "hidden" in its order within the array of `urls` stored in the manifest, with the implied behavior that a policy would prefer the ones at the top of the list.
+
 ## Example ##
 
 ### Setup ###
 The same setup script presented [here](cooperative%20migration.md#example) can be used to configure the Registry (the one at the source cluster) with the appropriate `urls` fields.
 
-At `DestinationProxy`
+Then, run the `DestinationProxy` in the source cluster:
 ```
 mkdir cache_dir
 dest_proxy.py 8080 cache_dir https://REGISTRY
 ```
 
-At `SourceProxy`
+And `SourceProxy` at the destination cluster:
 ```
 mkdir cache_dir
 source_proxy.py 8080 cache_dir DEST_PROXY:8080
 ```
+
+Assuming that `DEST_PROXY` is the address of the former. The `8080` port and a dedicated folder for cached content (`cache_dir`) are used in both cases, but they abviously don't have to be the same.
 
 ### Fetch a layer ###
 To test if a container image layer can be fetched through the two proxies, you can try:
 ```
 curl "SOURCE_PROXY:8080/v2/REPO/blobs/DIGEST"
 ```
-
-### Topology ###
-Clusters can be identified by dedicated [overlay networks](https://docs.docker.com/network/overlay/). Similarly, an additional overlay network comprising the two proxies may allow inter-cluster communications (its traffic may be encrypted at the price of additional overhead).
