@@ -23,8 +23,9 @@ mpstatpid=$!
 while [ 1 ]
 do
 #time stored in ns
-#  curTime='date +%s%N'
-  echo $(date +%s%N),$(awk 'END {print $NF}' util.txt) >> $idlefile
+  curTime='date +%s%N' 
+  $curTime > $idlefile
+  awk 'END {print $NF}' util.txt >> $idlefile
   sleep $loadtime
 done
 kill -9 $mpstatpid
