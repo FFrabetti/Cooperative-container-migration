@@ -29,3 +29,33 @@ nodetwo="node1-7"
 
 #Interface for the data plane
 ip_if="eth0"  
+
+# e.g. ip=$(getIp master)
+function getIp {
+	local name=$1;
+	echo $basenet${!name}
+}
+
+backgrounddir="/tmp/background"
+mkdir -p $backgrounddir
+
+function beforeBackground {
+	local fname="$backgrounddir/$1"
+	[ -f "$fname" ] && kill -kill $(cat "$fname") && rm "$fname"
+}
+
+function afterBackground { # $1 := name, $2 := pid
+	echo "$2" > "$backgrounddir/$1"
+}
+
+function sshroot {
+	local ip=$1
+	shift
+	ssh -o StrictHostKeyChecking=no root@$ip $@
+}
+export -f sshroot
+
+function sshrootbg {
+	sshroot $@ &>/dev/null
+}
+export -f sshrootbg

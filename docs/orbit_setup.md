@@ -61,7 +61,7 @@ $ sudo apt-get install docker-ce
 
 e. Install additional required packages (like the one for `mpstat`)
 ```
-sudo apt-get install sysstat
+sudo apt-get install sysstat iperf3 stress
 ```
 
 f. Clone/Pull this repository:

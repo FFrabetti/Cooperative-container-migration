@@ -1,4 +1,7 @@
 #!/bin/bash
+
+source ./config.sh
+
 usage () {
   echo "Usage:"
   echo "   ./$(basename $0) loadTime_in_seconds fileName"
@@ -18,15 +21,18 @@ fi
 
 loadtime=$1
 idlefile=$2
-mpstat $loadtime > util.txt &
-mpstatpid=$!
-while [ 1 ]
-do
-#time stored in ns
-  curTime='date +%s%N' 
-  $curTime > $idlefile
-  awk 'END {print $NF}' util.txt >> $idlefile
-  sleep $loadtime
-done
-kill -9 $mpstatpid
-rm -f util.txt
+
+mpstatfile="mpstat.$loadtime.txt"
+
+beforeBackground "measureLoad.pid"
+mpstat $loadtime > $mpstatfile &
+afterBackground "measureLoad.pid" $!
+
+beforeBackground "measureLoad_time.pid"
+while [ 1 ]; do
+	#time stored in ns
+	date +%s%N
+	awk 'END {print $NF}' $mpstatfile
+	sleep $loadtime
+done > $idlefile &
+afterBackground "measureLoad_time.pid" $!
