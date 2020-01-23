@@ -66,16 +66,12 @@ sleep 30
 [ $(ls bandwidth* | wc -w) -eq 5 ] || { echo "Error in measuring bandwidth"; exit 1; }
 
 
-
-
-
 #ssh root@$nodesrc "local_registry.sh certs; build_trafficgen.sh $layersize $appversion"
 #ssh root@$nodedst "local_registry.sh certs"
 #ssh root@$nodesrc "docker tag trafficgen:$appversion $basenet$dst/trafficgen:$appversion; docker push $basenet$dst/trafficgen:$appversion; \
 #		  docker tag trafficgen:${appversion}d $basenet$src/trafficgen:${appversion}d; docker push $basenet$src/trafficgen:${appversion}d"
 
 
-sshroot $nodesrc "measureTraffic.sh 1 trafficin.txt $ip_if in; measureTraffic.sh 1 trafficout.txt $ip_if out; measureLoad.sh 1 loadlocal.txt"
-sshroot $nodedst "{ bash measureTrafficIn.sh & }; { bash measureTrafficOut.sh & }; bash measureLoad.sh 1 loadlocal.txt &"
-sshroot $nodeclient "{ bash measureTrafficIn.sh & }; { bash measureTrafficOut.sh & }; bash measureLoad.sh 1 loadlocal.txt &"
-
+sshrootbg $nodesrc		"measureTraffic.sh 1 trafficin.txt $ip_if in; measureTraffic.sh 1 trafficout.txt $ip_if out; measureLoad.sh 1 loadlocal.txt"
+sshrootbg $nodedst		"measureTraffic.sh 1 trafficin.txt $ip_if in; measureTraffic.sh 1 trafficout.txt $ip_if out; measureLoad.sh 1 loadlocal.txt"
+sshrootbg $nodeclient	"measureTraffic.sh 1 trafficin.txt $ip_if in; measureTraffic.sh 1 trafficout.txt $ip_if out; measureLoad.sh 1 loadlocal.txt"
