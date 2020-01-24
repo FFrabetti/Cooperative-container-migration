@@ -30,7 +30,7 @@ fi
 if [ ! -f fillerB_1M ]; then
 	for f in fillerB fillerC fillerD; do
 		for i in {1..1024}; do
-			cat $f >> "$f_1M"
+			cat $f >> "${f}_1M"
 		done
 	done
 fi

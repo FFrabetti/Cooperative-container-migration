@@ -29,7 +29,7 @@ appversion=$5
 NTW=1
 WL=1
 TT="int"
-EXPDIR="tm_sl_ntw$NTW_wl$WL_$TT_$(date +%F_%H-%M-%S)"
+EXPDIR="tm_sl_ntw${NTW}_wl${WL}_${TT}_$(date +%F_%H-%M-%S)"
 mkdir -p $EXPDIR
 cp $channelparams "$EXPDIR/"
 cp $loadparams "$EXPDIR/"

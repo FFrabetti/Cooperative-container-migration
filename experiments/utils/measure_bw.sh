@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 
 source ./config.sh
 
@@ -23,7 +23,7 @@ function testbw {
 	echo "end of server part" >&2
 
 	sleep 2
-	ssh root@$src "iperf3 -c $srv"
+	ssh root@$src "iperf3 -c $srv --connect-timeout 5000"
 }
 
 echo "$0: $nodedst - $nodesrc"
