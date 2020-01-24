@@ -1,7 +1,7 @@
 #!/bin/bash
 #needs input file with incidence matrix of delay-bw values
 
-source ./config.sh
+source config.sh || { echo "config.sh not found"; exit 1; }
 
 var=10ms;
 

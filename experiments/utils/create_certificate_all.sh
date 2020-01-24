@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source ./config.sh
+source config.sh || { echo "config.sh not found"; exit 1; }
 
 for v in master src dst client one two; do
 	#echo ${!v};

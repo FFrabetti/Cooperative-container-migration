@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source ./config.sh
+source config.sh || { echo "config.sh not found"; exit 1; }
 
 function testbw {
 	local node=$1
@@ -23,7 +23,9 @@ function testbw {
 	echo "end of server part" >&2
 
 	sleep 2
-	ssh root@$src "iperf3 -c $srv --connect-timeout 5000"
+	ssh root@$src "iperf3 -c $srv &
+					sleep 20
+					ps -C iperf3 -o pid= | xargs -r kill -kill"
 }
 
 echo "$0: $nodedst - $nodesrc"

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source ./config.sh
+source config.sh || { echo "config.sh not found"; exit 1; }
 
 while read name; do
 	ps -C $name -o pid= | xargs -r kill -kill
