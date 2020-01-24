@@ -69,10 +69,10 @@ measure_bw.sh
 #ssh root@$nodesrc "docker tag trafficgen:$appversion $basenet$dst/trafficgen:$appversion; docker push $basenet$dst/trafficgen:$appversion; \
 #		  docker tag trafficgen:${appversion}d $basenet$src/trafficgen:${appversion}d; docker push $basenet$src/trafficgen:${appversion}d"
 
-
-sshrootbg $nodesrc		"measureTraffic.sh 1 trafficin.txt $ip_if in; measureTraffic.sh 1 trafficout.txt $ip_if out; measureLoad.sh 1 loadlocal.txt"
-sshrootbg $nodedst		"measureTraffic.sh 1 trafficin.txt $ip_if in; measureTraffic.sh 1 trafficout.txt $ip_if out; measureLoad.sh 1 loadlocal.txt"
-sshrootbg $nodeclient	"measureTraffic.sh 1 trafficin.txt $ip_if in; measureTraffic.sh 1 trafficout.txt $ip_if out; measureLoad.sh 1 loadlocal.txt"
+loadtime=1
+sshrootbg $nodesrc		"measureTraffic.sh 1 trafficin.txt $ip_if in; measureTraffic.sh 1 trafficout.txt $ip_if out; measureLoad.sh $loadtime loadlocal.txt"
+sshrootbg $nodedst		"measureTraffic.sh 1 trafficin.txt $ip_if in; measureTraffic.sh 1 trafficout.txt $ip_if out; measureLoad.sh $loadtime loadlocal.txt"
+sshrootbg $nodeclient	"measureTraffic.sh 1 trafficin.txt $ip_if in; measureTraffic.sh 1 trafficout.txt $ip_if out; measureLoad.sh $loadtime loadlocal.txt"
 
 
 # ################################################################
@@ -89,12 +89,15 @@ cp bandwidth* "$EXPDIR/" 	# measure_bw.sh
 
 scp $nodesrc:trafficin.txt "$EXPDIR/trafficin_src.txt"
 scp $nodesrc:trafficout.txt "$EXPDIR/trafficout_src.txt"
-scp $nodesrc:loadlocal.txt "$EXPDIR/load_src.txt"
+#scp $nodesrc:loadlocal.txt "$EXPDIR/load_src.txt"
+scp $nodesrc:"mpstat.$loadtime.txt" "$EXPDIR/load_src.txt"
 
 scp $nodedst:trafficin.txt "$EXPDIR/trafficin_dst.txt"
 scp $nodedst:trafficout.txt "$EXPDIR/trafficout_dst.txt"
-scp $nodedst:loadlocal.txt "$EXPDIR/load_dst.txt"
+#scp $nodedst:loadlocal.txt "$EXPDIR/load_dst.txt"
+scp $nodedst:"mpstat.$loadtime.txt" "$EXPDIR/load_dst.txt"
 
-scp $nodeclient:trafficin.txt "$EXPDIR/trafficin_dst.txt"
-scp $nodeclient:trafficout.txt "$EXPDIR/trafficout_dst.txt"
-scp $nodeclient:loadlocal.txt "$EXPDIR/load_dst.txt"
+scp $nodeclient:trafficin.txt "$EXPDIR/trafficin_cli.txt"
+scp $nodeclient:trafficout.txt "$EXPDIR/trafficout_cli.txt"
+#scp $nodeclient:loadlocal.txt "$EXPDIR/load_cli.txt"
+scp $nodeclient:"mpstat.$loadtime.txt" "$EXPDIR/load_cli.txt"
