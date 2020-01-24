@@ -64,7 +64,7 @@ echo "Measuring bandwidth... "
 measure_bw.sh
 
 
-#ssh root@$nodesrc "local_registry.sh certs; build_trafficgen.sh $layersize $appversion"
+#ssh root@$nodesrc "local_registry.sh certs; build_trafficgen.sh $appversion $layersize"
 #ssh root@$nodedst "local_registry.sh certs"
 #ssh root@$nodesrc "docker tag trafficgen:$appversion $basenet$dst/trafficgen:$appversion; docker push $basenet$dst/trafficgen:$appversion; \
 #		  docker tag trafficgen:${appversion}d $basenet$src/trafficgen:${appversion}d; docker push $basenet$src/trafficgen:${appversion}d"

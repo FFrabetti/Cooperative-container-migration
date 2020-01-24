@@ -1,38 +1,76 @@
 #!/bin/bash
 
-DIM=$1 	# LAYER_DIM (kB)
-VERS=t$2
+VERS=t$1
+DIM=$2
+# $3 := MB
 
 tar -xf Cooperative-container-migration/executable/trafficgen.tar
 cd trafficgen
 docker build -t trafficgen:$VERS .
 
-
-docker run --name "${VERS}b" -it trafficgen:$VERS /bin/bash -c "
-for i in \$(seq 1 $DIM); do
-	for j in {1..1000}; do
+# create filler files if not present
+if [ ! -f fillerB ]; then
+	for j in {1..1024}; do 	# 1 KB
 		echo -n -e '\x66' >> fillerB
 	done
+fi
+
+if [ ! -f fillerC ]; then
+	for j in {1..1024}; do 	# 1 KB
+		echo -n -e '\x67' >> fillerC
+	done
+fi
+
+if [ ! -f fillerD ]; then
+	for j in {1..1024}; do 	# 1 KB
+		echo -n -e '\x68' >> fillerD
+	done
+fi
+
+if [ ! -f fillerB_1M ]; then
+	for f in fillerB fillerC fillerD; do
+		for i in {1..1024}; do
+			cat $f >> "$f_1M"
+		done
+	done
+fi
+
+basefile=fillerB
+if [ $# -eq 3 ]; then
+	basefile=fillerB_1M
+fi
+
+docker run --name "${VERS}b" -it -v "$(pwd)/$basefile":/base trafficgen:$VERS /bin/bash -c "
+for i in \$(seq 1 $DIM); do
+	cat /base >> fB
 done"
 
 docker commit ${VERS}b trafficgen:${VERS}b
 docker container rm -f ${VERS}b
 
-docker run --name "${VERS}c" -it trafficgen:${VERS}b /bin/bash -c "
+
+basefile=fillerC
+if [ $# -eq 3 ]; then
+	basefile=fillerC_1M
+fi
+
+docker run --name "${VERS}c" -it -v "$(pwd)/$basefile":/base trafficgen:${VERS}b /bin/bash -c "
 for i in \$(seq 1 $DIM); do
-	for j in {1..1000}; do
-		echo -n -e '\x67' >> fillerC
-	done
+	cat /base >> fC
 done"
 
 docker commit ${VERS}c trafficgen:${VERS}c
 docker container rm -f ${VERS}c
 
-docker run --name "${VERS}d" -it trafficgen:${VERS}c /bin/bash -c "
+
+basefile=fillerD
+if [ $# -eq 3 ]; then
+	basefile=fillerD_1M
+fi
+
+docker run --name "${VERS}d" -it -v "$(pwd)/$basefile":/base trafficgen:${VERS}c /bin/bash -c "
 for i in \$(seq 1 $DIM); do
-	for j in {1..1000}; do
-		echo -n -e '\x68' >> fillerD
-	done
+	cat /base >> fD
 done"
 
 docker commit ${VERS}d trafficgen:${VERS}d
