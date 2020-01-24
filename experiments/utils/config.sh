@@ -35,7 +35,7 @@ function getIp {
 	echo $basenet${!name}
 }
 
-backgrounddir="/tmp/background"
+backgrounddir="$HOME/tmp/background"
 mkdir -p $backgrounddir
 
 function runningBackground {

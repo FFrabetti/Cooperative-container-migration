@@ -64,20 +64,56 @@ echo "Measuring bandwidth... "
 measure_bw.sh
 
 
-#ssh root@$nodesrc "local_registry.sh certs; build_trafficgen.sh $appversion $layersize"
-#ssh root@$nodedst "local_registry.sh certs"
-#ssh root@$nodesrc "docker tag trafficgen:$appversion $basenet$dst/trafficgen:$appversion; docker push $basenet$dst/trafficgen:$appversion; \
-#		  docker tag trafficgen:${appversion}d $basenet$src/trafficgen:${appversion}d; docker push $basenet$src/trafficgen:${appversion}d"
+# TODO: add a 3rd arg to build_trafficgen.sh to use MB instead of KB
+sshroot $nodedst "local_registry.sh certs"
+sshroot $nodesrc "local_registry.sh certs
+	build_trafficgen.sh $appversion $layersize
+	docker tag trafficgen:$appversion 		$basenet$dst/trafficgen:$appversion
+	docker push                       		$basenet$dst/trafficgen:$appversion
+	docker tag trafficgen:${appversion}d 	$basenet$src/trafficgen:${appversion}d
+	docker push                          	$basenet$src/trafficgen:${appversion}d
+	
+	docker container rm -f trafficgen
+	docker run -d -p 8080:8080 --name trafficgen trafficgen:${appversion}d catalina.sh run"
 
 loadtime=1
 sshrootbg $nodesrc		"measureTraffic.sh 1 trafficin.txt $ip_if in; measureTraffic.sh 1 trafficout.txt $ip_if out; measureLoad.sh $loadtime loadlocal.txt"
 sshrootbg $nodedst		"measureTraffic.sh 1 trafficin.txt $ip_if in; measureTraffic.sh 1 trafficout.txt $ip_if out; measureLoad.sh $loadtime loadlocal.txt"
 sshrootbg $nodeclient	"measureTraffic.sh 1 trafficin.txt $ip_if in; measureTraffic.sh 1 trafficout.txt $ip_if out; measureLoad.sh $loadtime loadlocal.txt"
 
+echo "Sleep for a few seconds, collecting baseline traffic/load..."
+sleep 10
+
+sshroot $nodeclient "tar -xf Cooperative-container-migration/executable/trafficgencl.tar
+	cd trafficgencl
+	docker build -t trafficgencl:$appversion .
+	cd ..
+	mkdir -p logs"
+
+respSize=1000
+prTimeFile="" 	# TODO
+sshrootbg $nodeclient "interactive_client.sh $respSize $prTimeFile | docker run -i --rm -v \"\$(pwd)/logs\":/logs \
+	--name tgenclint trafficgencl:$appversion \
+	java -jar trafficgencl.jar interactive http://$basenet$src:8080/trafficgen/interactive &"
+
+echo "Sleep for a few seconds, collecting pre-migration measurements..."
+sleep 10
 
 # ################################################################
-sleep 10
+
 # ################################################################
+
+echo "Sleep for a few seconds, collecting post-migration measurements..."
+sleep 10
+
+
+scp -r root@$nodeclient:logs "$EXPDIR/"
+
+sshroot $nodesrc "mkdir -p srv_logs; docker cp trafficgen:/usr/local/tomcat/logs srv_logs"
+scp -r root@$nodesrc:srv_logs "$EXPDIR/srv_logs_src/"
+
+sshroot $nodedst "mkdir -p srv_logs; docker cp trafficgen:/usr/local/tomcat/logs srv_logs"
+scp -r root@$nodedst:srv_logs "$EXPDIR/srv_logs_dst/"
 
 
 cp setup_resources.log "$EXPDIR/"
@@ -87,17 +123,14 @@ cp set_load.log "$EXPDIR/"
 cp bandwidth* "$EXPDIR/" 	# measure_bw.sh
 
 
-scp $nodesrc:trafficin.txt "$EXPDIR/trafficin_src.txt"
-scp $nodesrc:trafficout.txt "$EXPDIR/trafficout_src.txt"
-#scp $nodesrc:loadlocal.txt "$EXPDIR/load_src.txt"
-scp $nodesrc:"mpstat.$loadtime.txt" "$EXPDIR/load_src.txt"
+scp root@$nodesrc:trafficin.txt "$EXPDIR/trafficin_src.txt"
+scp root@$nodesrc:trafficout.txt "$EXPDIR/trafficout_src.txt"
+scp root@$nodesrc:"mpstat.$loadtime.txt" "$EXPDIR/load_src.txt"
 
-scp $nodedst:trafficin.txt "$EXPDIR/trafficin_dst.txt"
-scp $nodedst:trafficout.txt "$EXPDIR/trafficout_dst.txt"
-#scp $nodedst:loadlocal.txt "$EXPDIR/load_dst.txt"
-scp $nodedst:"mpstat.$loadtime.txt" "$EXPDIR/load_dst.txt"
+scp root@$nodedst:trafficin.txt "$EXPDIR/trafficin_dst.txt"
+scp root@$nodedst:trafficout.txt "$EXPDIR/trafficout_dst.txt"
+scp root@$nodedst:"mpstat.$loadtime.txt" "$EXPDIR/load_dst.txt"
 
-scp $nodeclient:trafficin.txt "$EXPDIR/trafficin_cli.txt"
-scp $nodeclient:trafficout.txt "$EXPDIR/trafficout_cli.txt"
-#scp $nodeclient:loadlocal.txt "$EXPDIR/load_cli.txt"
-scp $nodeclient:"mpstat.$loadtime.txt" "$EXPDIR/load_cli.txt"
+scp root@$nodeclient:trafficin.txt "$EXPDIR/trafficin_cli.txt"
+scp root@$nodeclient:trafficout.txt "$EXPDIR/trafficout_cli.txt"
+scp root@$nodeclient:"mpstat.$loadtime.txt" "$EXPDIR/load_cli.txt"

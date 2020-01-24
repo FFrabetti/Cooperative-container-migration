@@ -68,13 +68,16 @@ Here are reported some examples of usage of the two applications. Volumes/Mount 
 
 #### Server ####
 ```
-docker run -d -p 8080:8080 -v myvol:/usr/local/tomcat/myvol \
+docker container rm -f trafficgen
+docker run -d -p 8080:8080 \
+	-v myvol:/usr/local/tomcat/myvol \
 	--name trafficgen trafficgen:1.0
 ```
 
 Log files can be found within the container in `/usr/local/tomcat/logs` (with the current configuration):
 ```
-docker cp trafficgen:/usr/local/tomcat/logs/* ./
+mkdir -p srv_logs
+docker cp trafficgen:/usr/local/tomcat/logs srv_logs
 
 # or, by accessing the container directly
 docker exec -it trafficgen bash
@@ -85,14 +88,15 @@ cd logs
 
 #### Client ####
 ```
-docker run -it -v /logs:/logs \
-	--name trafficgencl trafficgencl:1.0 \
+mkdir -p logs
+docker run -it --rm -v "$(pwd)/logs":/logs \
+	--name tgenclint trafficgencl:1.0 \
 	java -jar trafficgencl.jar interactive http://<SRV_ADDR>:8080/trafficgen/interactive
 ```
 
 ```
-docker run -it -v /logs:/logs \
-	--name trafficgencl trafficgencl:1.0 \
+docker run -it --rm -v "$(pwd)/logs":/logs \
+	--name tgenclconv trafficgencl:1.0 \
 	java -jar trafficgencl.jar conversational ws://<SRV_ADDR>:8080/trafficgen/conversational/5000
 ```
 

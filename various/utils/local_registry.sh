@@ -9,6 +9,7 @@
 
 # ################ START/STOP LOCAL REGISTRY ################
 if [ $# -ne 1 ]; then
+	docker container rm -f registry
 	docker run -d \
 		-p 5000:5000 \
 		-v "$(pwd)/registry":/var/lib/registry \
@@ -21,6 +22,7 @@ else
 	echo "Running registry with TLS (certificate in $CERTS) ..."
 	
 	if [ ! -f "$CONFIG_FILE" ]; then
+		docker container rm -f sec_registry
 		docker run -d \
 			-p 443:443 \
 			-v "$CERTS":/certs \
@@ -33,6 +35,7 @@ else
 	else
 		# instead of using -e arguments, you can specify an alternate YAML configuration file by mounting it as a volume in the container
 		echo "... using $CONFIG_FILE configuration file ..."
+		docker container rm -f sec_registry
 		docker run -d \
 			-p 443:443 \
 			-v "$CERTS":/certs \

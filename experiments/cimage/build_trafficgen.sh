@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERS=t$1
+VERS=$1
 DIM=$2
 # $3 := MB
 
