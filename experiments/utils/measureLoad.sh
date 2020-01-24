@@ -24,15 +24,13 @@ idlefile=$2
 
 mpstatfile="mpstat.$loadtime.txt"
 
-beforeBackground "measureLoad.pid"
 mpstat $loadtime > $mpstatfile &
-afterBackground "measureLoad.pid" $!
+runningBackground "mpstat"
 
-beforeBackground "measureLoad_time.pid"
-while [ 1 ]; do
+whilef=$(whileBackground "measureLoad")
+while [ -e $whilef ]; do
 	#time stored in ns
-	date +%s%N
-	awk 'END {print $NF}' $mpstatfile
+	#date +%s%N
+	awk 'END {print $NF}' $mpstatfile > $idlefile
 	sleep $loadtime
-done > $idlefile &
-afterBackground "measureLoad_time.pid" $!
+done &

@@ -9,14 +9,13 @@ direction=$4
 
 tcpdumpfile="tcpdump_$direction"
 
-beforeBackground "measureTraffic_$direction.pid"
 tcpdump -i $intf -l --immediate-mode --direction=$direction -B 100000 -tt -U > $tcpdumpfile &
-afterBackground "measureTraffic_$direction.pid" $!
+runningBackground "tcpdump"
 
-beforeBackground "measureTraffic_$direction_time.pid"
+whilef=$(whileBackground "measureTraffic")
 (
 	prevPackets=0
-	while true; do
+	while [ -e $whilef ]; do
 		countPkts=$(wc -l < $tcpdumpfile)
 		curPackets=$(( countPkts - prevPackets ))
 		echo $(date +%s%N),$curPackets
@@ -24,4 +23,3 @@ beforeBackground "measureTraffic_$direction_time.pid"
 		sleep $traffictime
 	done > $trafficfile
 ) &
-afterBackground "measureTraffic_$direction_time.pid" $!

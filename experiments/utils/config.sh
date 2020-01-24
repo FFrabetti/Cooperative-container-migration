@@ -38,13 +38,13 @@ function getIp {
 backgrounddir="/tmp/background"
 mkdir -p $backgrounddir
 
-function beforeBackground {
-	local fname="$backgrounddir/$1"
-	[ -f "$fname" ] && kill -kill $(cat "$fname") && rm "$fname"
+function runningBackground {
+	echo $1 >> "$backgrounddir/running.list"
 }
 
-function afterBackground { # $1 := name, $2 := pid
-	echo "$2" > "$backgrounddir/$1"
+function whileBackground {
+	local fname="$backgrounddir/$1"
+	echo $fname | tee $fname
 }
 
 function sshroot {
@@ -55,6 +55,8 @@ function sshroot {
 export -f sshroot
 
 function sshrootbg {
-	sshroot $@ &>/dev/null
+	local ip=$1
+	shift
+	ssh -f root@$ip $@ &>/dev/null
 }
 export -f sshrootbg

@@ -2,29 +2,41 @@
 
 source ./config.sh
 
-startserver="(lsof -ti tcp:5201 | xargs -r kill; iperf3 -s -1) &"
+function testbw {
+	local node=$1
+	local timeout=$2
+	local src=$3
+	local srv=$4
+
+	if [ $# -lt 4 ]; then
+		srv=$node
+	fi
+
+	ssh -f root@$node "(
+		lsof -ti tcp:5201 || iperf3 -s &
+
+		[ $timeout -eq 0 ] || { sleep $timeout
+		#ps -aux | grep iperf > wokenup
+		lsof -ti tcp:5201 | xargs -r kill -kill; }
+	) &" &>/dev/null
+
+	echo "end of server part" >&2
+
+	sleep 2
+	ssh root@$src "iperf3 -c $srv"
+}
 
 echo "$0: $nodedst - $nodesrc"
-sshrootbg $nodesrc "$startserver"
-sleep 1
-sshroot $nodedst "iperf3 -c $basenet$src" > bandwidth_src_dst.txt
+testbw $nodedst 0 $nodesrc "$basenet$dst" > bandwidth_dst_src.txt
 
-echo "$0: $nodeone - $nodedst"
-sshrootbg $nodedst "$startserver"
-sleep 1
-sshroot $nodeone "iperf3 -c $basenet$dst" > bandwidth_dst_node1.txt
+echo "$0: $nodedst - $nodeclient"
+testbw $nodedst 0 $nodeclient "$basenet$dst" > bandwidth_dst_cli.txt
 
-echo "$0: $nodetwo - $nodedst"
-sshrootbg $nodedst "$startserver"
-sleep 1
-sshroot $nodetwo "iperf3 -c $basenet$dst" > bandwidth_dst_node2.txt
+echo "$0: $nodedst - $nodeone"
+testbw $nodedst 0 $nodeone "$basenet$dst" > bandwidth_dst_n1.txt
+
+echo "$0: $nodedst - $nodetwo"
+testbw $nodedst 30 $nodetwo "$basenet$dst" > bandwidth_dst_n2.txt
 
 echo "$0: $nodeclient - $nodesrc"
-sshrootbg $nodesrc "$startserver"
-sleep 1
-sshroot $nodeclient "iperf3 -c $basenet$src" > bandwidth_src_client.txt
-
-echo "$0: $nodeclient - $nodedst"
-sshrootbg $nodedst "$startserver"
-sleep 1
-sshroot $nodeclient "iperf3 -c $basenet$dst" > bandwidth_dst_client.txt
+testbw $nodeclient 30 $nodesrc "$basenet$client" > bandwidth_cli_src.txt
