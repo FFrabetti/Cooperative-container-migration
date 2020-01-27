@@ -37,7 +37,7 @@ echo "$@" > "$EXPDIR/args"
 
 
 # 1. Set network interfaces + setup.sh (git pull and .sh links in bin)
-setup_resources.sh > setup_resources.log 2>&1
+bash setup_resources.sh > setup_resources.log 2>&1
 
 # 1.1 /root/bin directories should have been created in all nodes
 sshroot $nodedst "[ -d /root/bin ]" || { echo "error! check setup_resources.log"; exit 1; }
@@ -49,32 +49,32 @@ for n in $nodemaster $nodesrc $nodedst $nodeclient $nodeone $nodetwo; do
 done
 
 # 2. Create and sign certificates
-create_certificate_all.sh > create_certificate_all.log 2>&1
+bash create_certificate_all.sh > create_certificate_all.log 2>&1
 
 # 2.1 /root/certs directories should have been created in all nodes
 sshroot $nodedst "[ -d /root/certs ]" || { echo "error! check create_certificate_all.log"; exit 1; }
 
 # 3. Set channels and load baselines
-set_channel.sh				< $channelparams > set_channel.log 2>&1
-set_load.sh $loadtimeout 	< $loadparams 	 > set_load.log 2>&1
+bash set_channel.sh				< $channelparams > set_channel.log 2>&1
+bash set_load.sh $loadtimeout 	< $loadparams 	 > set_load.log 2>&1
 
 # 4. Measure bandwidth
 # it takes a while...
 echo "Measuring bandwidth... "
-measure_bw.sh
+bash measure_bw.sh
 
 
 # TODO: add a 3rd arg to build_trafficgen.sh to use MB instead of KB
 sshroot $nodedst "local_registry.sh certs"
-sshroot $nodesrc "local_registry.sh certs
-	build_trafficgen.sh $appversion $layersize
-	docker tag trafficgen:$appversion 		$basenet$dst/trafficgen:$appversion
-	docker push                       		$basenet$dst/trafficgen:$appversion
-	docker tag trafficgen:${appversion}d 	$basenet$src/trafficgen:${appversion}d
-	docker push                          	$basenet$src/trafficgen:${appversion}d
+sshroot $nodesrc "local_registry.sh certs;
+	build_trafficgen.sh $appversion $layersize;
+	docker tag trafficgen:$appversion 		$basenet$dst/trafficgen:$appversion;
+	docker push                       		$basenet$dst/trafficgen:$appversion;
+	docker tag trafficgen:${appversion}d 	$basenet$src/trafficgen:${appversion}d;
+	docker push                          	$basenet$src/trafficgen:${appversion}d;
 	
-	docker container rm -f trafficgen
-	docker run -d -p 8080:8080 --name trafficgen trafficgen:${appversion}d"
+	docker container rm -f trafficgen;
+	docker run -d -p 8080:8080 --name trafficgen trafficgen:${appversion}d;"
 
 loadtime=1
 sshrootbg $nodesrc		"measureTraffic.sh 1 trafficin.txt $ip_if in; measureTraffic.sh 1 trafficout.txt $ip_if out; measureLoad.sh $loadtime loadlocal.txt"
@@ -84,18 +84,18 @@ sshrootbg $nodeclient	"measureTraffic.sh 1 trafficin.txt $ip_if in; measureTraff
 echo "Sleep for a few seconds, collecting baseline traffic/load..."
 sleep 10
 
-sshroot $nodeclient "tar -xf Cooperative-container-migration/executable/trafficgencl.tar
-	cd trafficgencl
-	docker build -t trafficgencl:$appversion .
-	cd ..
-	mkdir -p logs"
+sshroot $nodeclient "tar -xf Cooperative-container-migration/executable/trafficgencl.tar;
+	cd trafficgencl;
+	docker build -t trafficgencl:$appversion .;
+	cd ..;
+	mkdir -p logs;"
 
 respSize=1000
 prTimeFile="pr_sequence"
 
 if [ ! -f $prTimeFile ]; then
 	# len minrange maxrange
-	generate_rand_seq.sh 100 10 1000 > $prTimeFile
+	bash generate_rand_seq.sh 100 10 1000 > $prTimeFile
 fi
 cp $prTimeFile "$EXPDIR/"
 scp $prTimeFile root@$nodeclient:$prTimeFile

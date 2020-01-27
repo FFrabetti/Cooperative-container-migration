@@ -8,5 +8,5 @@ sshroot $nodemaster		"ifconfig $ip_if $basenet$master netmask $netmask up;	./set
 sshroot $nodesrc		"ifconfig $ip_if $basenet$src netmask $netmask up;		./setup.sh"
 sshroot $nodedst		"ifconfig $ip_if $basenet$dst netmask $netmask up;		./setup.sh"
 sshroot $nodeclient		"ifconfig $ip_if $basenet$client netmask $netmask up;	./setup.sh"
-sshroot $node1			"ifconfig $ip_if $basenet$n1 netmask $netmask up;		./setup.sh"
-sshroot $node2			"ifconfig $ip_if $basenet$n2 netmask $netmask up;		./setup.sh"
+sshroot $nodeone		"ifconfig $ip_if $basenet$one netmask $netmask up;		./setup.sh"
+sshroot $nodetwo		"ifconfig $ip_if $basenet$two netmask $netmask up;		./setup.sh"
