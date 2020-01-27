@@ -4,7 +4,7 @@ source config.sh || { echo "config.sh not found"; exit 1; }
 
 usage () {
   echo "Usage:"
-  echo "   ./$(basename $0) channelparams loadparams loadtimeout layersize appversion"
+  echo "   ./$(basename $0) (channelparams | '0') loadparams loadtimeout layersize appversion"
   exit 0
 }
 
@@ -25,6 +25,9 @@ loadtimeout=$3
 layersize=$4
 appversion=$5
 
+if [ -f $1 ]; then
+	runfromscratch=true
+fi
 
 NTW=1
 WL=1
@@ -36,43 +39,63 @@ cp $loadparams "$EXPDIR/"
 echo "$@" > "$EXPDIR/args"
 
 
-# 1. Set network interfaces + setup.sh (git pull and .sh links in bin)
-bash setup_resources.sh > setup_resources.log 2>&1
+if [ $runfromscratch ]; then
+	# 1. Set network interfaces + setup.sh (git pull and .sh links in bin)
+	bash setup_resources.sh > setup_resources.log 2>&1
 
-# 1.1 /root/bin directories should have been created in all nodes
-sshroot $nodedst "[ -d /root/bin ]" || { echo "error! check setup_resources.log"; exit 1; }
+	# 1.1 /root/bin directories should have been created in all nodes
+	sshroot $nodedst "[ -d /root/bin ]" || { echo "error! check setup_resources.log"; exit 1; }
 
-# 1.2 Check nodes and IPs + kill background processes from prev. runs
-sleep 5
-for n in $nodemaster $nodesrc $nodedst $nodeclient $nodeone $nodetwo; do
-	sshroot $n "hostname; ip a show up dev $ip_if | grep 'inet '; clean_bg.sh"
+	# 1.2 Check nodes and IPs
+	sleep 5
+	for n in $nodemaster $nodesrc $nodedst $nodeclient $nodeone $nodetwo; do
+		sshroot $n "hostname; ip a show up dev $ip_if | grep 'inet '"
+	done
+fi
+
+# 1.3 kill background processes from prev. runs
+for n in $nodesrc $nodedst $nodeclient; do
+	sshroot $n "clean_bg.sh"
 done
 
-# 2. Create and sign certificates
-bash create_certificate_all.sh > create_certificate_all.log 2>&1
+if [ $runfromscratch ]; then
+	# 2. Create and sign certificates
+	bash create_certificate_all.sh > create_certificate_all.log 2>&1
 
-# 2.1 /root/certs directories should have been created in all nodes
-sshroot $nodedst "[ -d /root/certs ]" || { echo "error! check create_certificate_all.log"; exit 1; }
+	# 2.1 /root/certs directories should have been created in all nodes
+	sshroot $nodedst "[ -d /root/certs ]" || { echo "error! check create_certificate_all.log"; exit 1; }
 
-# 3. Set channels and load baselines
-bash set_channel.sh				< $channelparams > set_channel.log 2>&1
+	# 3. Set channels and load baselines
+	bash set_channel.sh				< $channelparams > set_channel.log 2>&1
+
+	# 4. Measure bandwidth
+	# it takes a while...
+	echo "Measuring bandwidth... "
+	bash measure_bw.sh
+fi
+
 bash set_load.sh $loadtimeout 	< $loadparams 	 > set_load.log 2>&1
 
-# 4. Measure bandwidth
-# it takes a while...
-echo "Measuring bandwidth... "
-bash measure_bw.sh
-
-
 # TODO: add a 3rd arg to build_trafficgen.sh to use MB instead of KB
-sshroot $nodedst "local_registry.sh certs"
-sshroot $nodesrc "local_registry.sh certs;
-	build_trafficgen.sh $appversion $layersize;
+sshroot $nodedst "docker rm -f \$(docker ps -q); docker system prune -fa --volumes; local_registry.sh certs;"
+
+sshroot $nodesrc "
+	if [ \$(docker ps -q --filter 'name=sec_registry') ]; then
+		echo sec_registry already running
+	else
+		local_registry.sh certs
+	fi;
+	
+	source registry-functions.sh;
+	if ! curl_test_ok \"https://$basenet$src/v2/trafficgen/manifests/$appversion\"; then
+		build_trafficgen.sh $appversion $layersize;
+		docker tag trafficgen:${appversion}d 	$basenet$src/trafficgen:${appversion}d;
+		docker push                          	$basenet$src/trafficgen:${appversion}d;
+	fi;
+	
 	docker tag trafficgen:$appversion 		$basenet$dst/trafficgen:$appversion;
 	docker push                       		$basenet$dst/trafficgen:$appversion;
-	docker tag trafficgen:${appversion}d 	$basenet$src/trafficgen:${appversion}d;
-	docker push                          	$basenet$src/trafficgen:${appversion}d;
-	
+
 	docker container rm -f trafficgen;
 	docker run -d -p 8080:8080 --name trafficgen trafficgen:${appversion}d;"
 
@@ -84,11 +107,14 @@ sshrootbg $nodeclient	"measureTraffic.sh 1 trafficin.txt $ip_if in; measureTraff
 echo "Sleep for a few seconds, collecting baseline traffic/load..."
 sleep 10
 
-sshroot $nodeclient "tar -xf Cooperative-container-migration/executable/trafficgencl.tar;
-	cd trafficgencl;
-	docker build -t trafficgencl:$appversion .;
-	cd ..;
-	mkdir -p logs;"
+sshroot $nodeclient "
+	if [ ! -d trafficgencl ]; then
+		tar -xf Cooperative-container-migration/executable/trafficgencl.tar;
+		cd trafficgencl;
+		docker build -t trafficgencl:1.0 .;
+		cd ..;
+		mkdir -p logs;
+	fi"
 
 respSize=1000
 prTimeFile="pr_sequence"
@@ -102,21 +128,31 @@ scp $prTimeFile root@$nodeclient:$prTimeFile
 
 # it runs forever, with 1s period, until the container is stopped or prTimeFile is deleted
 sshrootbg $nodeclient "interactive_client.sh $respSize $prTimeFile | docker run -i --rm -v \"\$(pwd)/logs\":/logs \
-	--name tgenclint trafficgencl:$appversion \
+	--name tgenclint trafficgencl:1.0 \
 	java -jar trafficgencl.jar interactive http://$basenet$src:8080/trafficgen/interactive &"
 
 echo "Sleep for a few seconds, collecting pre-migration measurements..."
 sleep 10
 
 # ################################################################
+beforemigr=$(date +%s%N)
+sshroot $nodedst "cpull_image_dest.sh https://$basenet$src trafficgen:${appversion}d https://$basenet$src https://$basenet$dst;
+	docker run -d -p 8080:8080 --name trafficgen trafficgen:${appversion}d;"
+aftermigr=$(date +%s%N)
 
+sshrootbg $nodeclient "mkdir -p logs2;
+	interactive_client.sh $respSize $prTimeFile | docker run -i --rm -v \"\$(pwd)/logs2\":/logs \
+	--name tgenclintdst trafficgencl:1.0 \
+	java -jar trafficgencl.jar interactive http://$basenet$dst:8080/trafficgen/interactive &"
 # ################################################################
 
 echo "Sleep for a few seconds, collecting post-migration measurements..."
 sleep 10
 
+echo "$beforemigr $aftermigr" > "$EXPDIR/migr_time"
 
 scp -r root@$nodeclient:logs "$EXPDIR/"
+scp -r root@$nodeclient:logs2 "$EXPDIR/"
 
 sshroot $nodesrc "mkdir -p srv_logs; docker cp trafficgen:/usr/local/tomcat/logs srv_logs"
 scp -r root@$nodesrc:srv_logs "$EXPDIR/srv_logs_src/"
