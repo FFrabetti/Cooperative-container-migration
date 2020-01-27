@@ -74,7 +74,7 @@ sshroot $nodesrc "local_registry.sh certs
 	docker push                          	$basenet$src/trafficgen:${appversion}d
 	
 	docker container rm -f trafficgen
-	docker run -d -p 8080:8080 --name trafficgen trafficgen:${appversion}d catalina.sh run"
+	docker run -d -p 8080:8080 --name trafficgen trafficgen:${appversion}d"
 
 loadtime=1
 sshrootbg $nodesrc		"measureTraffic.sh 1 trafficin.txt $ip_if in; measureTraffic.sh 1 trafficout.txt $ip_if out; measureLoad.sh $loadtime loadlocal.txt"
@@ -91,7 +91,16 @@ sshroot $nodeclient "tar -xf Cooperative-container-migration/executable/trafficg
 	mkdir -p logs"
 
 respSize=1000
-prTimeFile="" 	# TODO
+prTimeFile="pr_sequence"
+
+if [ ! -f $prTimeFile ]; then
+	# len minrange maxrange
+	generate_rand_seq.sh 100 10 1000 > $prTimeFile
+fi
+cp $prTimeFile "$EXPDIR/"
+scp $prTimeFile root@$nodeclient:$prTimeFile
+
+# it runs forever, with 1s period, until the container is stopped or prTimeFile is deleted
 sshrootbg $nodeclient "interactive_client.sh $respSize $prTimeFile | docker run -i --rm -v \"\$(pwd)/logs\":/logs \
 	--name tgenclint trafficgencl:$appversion \
 	java -jar trafficgencl.jar interactive http://$basenet$src:8080/trafficgen/interactive &"

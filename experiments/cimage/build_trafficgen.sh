@@ -73,5 +73,5 @@ for i in \$(seq 1 $DIM); do
 	cat /base >> fD
 done"
 
-docker commit ${VERS}d trafficgen:${VERS}d
+docker commit --change='CMD ["catalina.sh", "run"]' ${VERS}d trafficgen:${VERS}d
 docker container rm -f ${VERS}d
