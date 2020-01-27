@@ -40,7 +40,7 @@ if [ $# -eq 3 ]; then
 	basefile=fillerB_1M
 fi
 
-docker run --name "${VERS}b" -it -v "$(pwd)/$basefile":/base trafficgen:$VERS /bin/bash -c "
+docker run --name "${VERS}b" -v "$(pwd)/$basefile":/base trafficgen:$VERS /bin/bash -c "
 for i in \$(seq 1 $DIM); do
 	cat /base >> fB
 done"
@@ -54,7 +54,7 @@ if [ $# -eq 3 ]; then
 	basefile=fillerC_1M
 fi
 
-docker run --name "${VERS}c" -it -v "$(pwd)/$basefile":/base trafficgen:${VERS}b /bin/bash -c "
+docker run --name "${VERS}c" -v "$(pwd)/$basefile":/base trafficgen:${VERS}b /bin/bash -c "
 for i in \$(seq 1 $DIM); do
 	cat /base >> fC
 done"
@@ -68,7 +68,7 @@ if [ $# -eq 3 ]; then
 	basefile=fillerD_1M
 fi
 
-docker run --name "${VERS}d" -it -v "$(pwd)/$basefile":/base trafficgen:${VERS}c /bin/bash -c "
+docker run --name "${VERS}d" -v "$(pwd)/$basefile":/base trafficgen:${VERS}c /bin/bash -c "
 for i in \$(seq 1 $DIM); do
 	cat /base >> fD
 done"

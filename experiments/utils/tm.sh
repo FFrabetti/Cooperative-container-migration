@@ -25,19 +25,19 @@ loadtimeout=$3
 layersize=$4
 appversion=$5
 
-if [ -f $1 ]; then
-	runfromscratch=true
-fi
 
 NTW=1
 WL=1
 TT="int"
 EXPDIR="tm_sl_ntw${NTW}_wl${WL}_${TT}_$(date +%F_%H-%M-%S)"
 mkdir -p $EXPDIR
-cp $channelparams "$EXPDIR/"
 cp $loadparams "$EXPDIR/"
 echo "$@" > "$EXPDIR/args"
 
+if [ -f $1 ]; then
+	runfromscratch=true
+	cp $channelparams "$EXPDIR/"
+fi
 
 if [ $runfromscratch ]; then
 	# 1. Set network interfaces + setup.sh (git pull and .sh links in bin)
@@ -79,23 +79,7 @@ bash set_load.sh $loadtimeout 	< $loadparams 	 > set_load.log 2>&1
 # TODO: add a 3rd arg to build_trafficgen.sh to use MB instead of KB
 sshroot $nodedst "docker rm -f \$(docker ps -q); docker system prune -fa --volumes; local_registry.sh certs;"
 
-sshroot $nodesrc "
-	if [ \$(docker ps -q --filter 'name=sec_registry') ]; then
-		echo sec_registry already running
-	else
-		local_registry.sh certs
-	fi;
-	
-	source registry-functions.sh;
-	if ! curl_test_ok \"https://$basenet$src/v2/trafficgen/manifests/$appversion\"; then
-		build_trafficgen.sh $appversion $layersize;
-		docker tag trafficgen:${appversion}d 	$basenet$src/trafficgen:${appversion}d;
-		docker push                          	$basenet$src/trafficgen:${appversion}d;
-	fi;
-	
-	docker tag trafficgen:$appversion 		$basenet$dst/trafficgen:$appversion;
-	docker push                       		$basenet$dst/trafficgen:$appversion;
-
+sshroot $nodesrc "src_build_image.sh $basenet$src $basenet$dst $appversion $layersize;
 	docker container rm -f trafficgen;
 	docker run -d -p 8080:8080 --name trafficgen trafficgen:${appversion}d;"
 
