@@ -121,7 +121,7 @@ sleep 10
 # ################################################################
 beforemigr=$(date +%s%N)
 sshroot $nodedst "cpull_image_dest.sh https://$basenet$src trafficgen:${appversion}d https://$basenet$src https://$basenet$dst;
-	docker run -d -p 8080:8080 --name trafficgen trafficgen:${appversion}d;"
+	docker run -d -p 8080:8080 --name trafficgen $basenet$dst/trafficgen:${appversion}d;"
 aftermigr=$(date +%s%N)
 
 sshrootbg $nodeclient "mkdir -p logs2;
