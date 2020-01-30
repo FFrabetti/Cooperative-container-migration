@@ -26,10 +26,8 @@ layersize=$4
 appversion=$5
 
 
-NTW=1
-WL=1
 TT="int"
-EXPDIR="tm_sl_ntw${NTW}_wl${WL}_${TT}_$(date +%F_%H-%M-%S)"
+EXPDIR="tm_sl_${TT}_$(date +%F_%H-%M-%S)"
 mkdir -p $EXPDIR
 cp $loadparams "$EXPDIR/"
 echo "$@" > "$EXPDIR/args"
@@ -81,7 +79,7 @@ sshroot $nodedst "docker rm -f \$(docker ps -q); docker system prune -fa --volum
 
 sshroot $nodesrc "src_build_image.sh $basenet$src $basenet$dst $appversion $layersize;
 	docker container rm -f trafficgen;
-	docker run -d -p 8080:8080 --name trafficgen trafficgen:${appversion}d;"
+	docker run -d -v /etc/timezone:/etc/timezone:ro -v /etc/localtime:/etc/localtime:ro -p 8080:8080 --name trafficgen trafficgen:${appversion}d;"
 
 loadtime=1
 sshrootbg $nodesrc		"measureTraffic.sh 1 trafficin.txt $ip_if in; measureTraffic.sh 1 trafficout.txt $ip_if out; measureLoad.sh $loadtime loadlocal.txt"
@@ -111,7 +109,7 @@ cp $prTimeFile "$EXPDIR/"
 scp $prTimeFile root@$nodeclient:$prTimeFile
 
 # it runs forever, with 1s period, until the container is stopped or prTimeFile is deleted
-sshrootbg $nodeclient "interactive_client.sh $respSize $prTimeFile | docker run -i --rm -v \"\$(pwd)/logs\":/logs \
+sshrootbg $nodeclient "interactive_client.sh $respSize $prTimeFile | docker run -v /etc/timezone:/etc/timezone:ro -v /etc/localtime:/etc/localtime:ro -i --rm -v \"\$(pwd)/logs\":/logs \
 	--name tgenclint trafficgencl:1.0 \
 	java -jar trafficgencl.jar interactive http://$basenet$src:8080/trafficgen/interactive &"
 
@@ -121,11 +119,11 @@ sleep 10
 # ################################################################
 beforemigr=$(date +%s%N)
 sshroot $nodedst "cpull_image_dest.sh https://$basenet$src trafficgen:${appversion}d https://$basenet$src https://$basenet$dst;
-	docker run -d -p 8080:8080 --name trafficgen $basenet$dst/trafficgen:${appversion}d;"
+	docker run -d -v /etc/timezone:/etc/timezone:ro -v /etc/localtime:/etc/localtime:ro -p 8080:8080 --name trafficgen $basenet$dst/trafficgen:${appversion}d;"
 aftermigr=$(date +%s%N)
 
 sshrootbg $nodeclient "mkdir -p logs2;
-	interactive_client.sh $respSize $prTimeFile | docker run -i --rm -v \"\$(pwd)/logs2\":/logs \
+	interactive_client.sh $respSize $prTimeFile | docker run -v /etc/timezone:/etc/timezone:ro -v /etc/localtime:/etc/localtime:ro -i --rm -v \"\$(pwd)/logs2\":/logs \
 	--name tgenclintdst trafficgencl:1.0 \
 	java -jar trafficgencl.jar interactive http://$basenet$dst:8080/trafficgen/interactive &"
 # ################################################################
@@ -152,14 +150,17 @@ cp set_load.log "$EXPDIR/"
 cp bandwidth* "$EXPDIR/" 	# measure_bw.sh
 
 
-scp root@$nodesrc:trafficin.txt "$EXPDIR/trafficin_src.txt"
-scp root@$nodesrc:trafficout.txt "$EXPDIR/trafficout_src.txt"
+# these just have a packet count
+# scp root@$nodesrc:trafficin.txt "$EXPDIR/trafficin_src.txt"
+# scp root@$nodesrc:trafficout.txt "$EXPDIR/trafficout_src.txt"
+scp root@$nodesrc:tcpdump_in "$EXPDIR/trafficin_src.txt"
+scp root@$nodesrc:tcpdump_out "$EXPDIR/trafficout_src.txt"
 scp root@$nodesrc:"mpstat.$loadtime.txt" "$EXPDIR/load_src.txt"
 
-scp root@$nodedst:trafficin.txt "$EXPDIR/trafficin_dst.txt"
-scp root@$nodedst:trafficout.txt "$EXPDIR/trafficout_dst.txt"
+scp root@$nodedst:tcpdump_in "$EXPDIR/trafficin_dst.txt"
+scp root@$nodedst:tcpdump_out "$EXPDIR/trafficout_dst.txt"
 scp root@$nodedst:"mpstat.$loadtime.txt" "$EXPDIR/load_dst.txt"
 
-scp root@$nodeclient:trafficin.txt "$EXPDIR/trafficin_cli.txt"
-scp root@$nodeclient:trafficout.txt "$EXPDIR/trafficout_cli.txt"
+scp root@$nodeclient:tcpdump_in "$EXPDIR/trafficin_cli.txt"
+scp root@$nodeclient:tcpdump_out "$EXPDIR/trafficout_cli.txt"
 scp root@$nodeclient:"mpstat.$loadtime.txt" "$EXPDIR/load_cli.txt"

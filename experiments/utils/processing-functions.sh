@@ -1,8 +1,8 @@
 #!/bin/bash
 
 function getBandwidth { # FILENAME -> TIMESTAMP BW
-	local bw=$(tail -4 $1 | head -1 | rev | awk '{ print $2 " " $3 }' | rev)
-	local ts=$(tail -1 $1)
+	local bw=$(tail -3 $1 | head -1 | rev | awk '{ print $2 " " $3 }' | rev)
+	local ts=$(head -1 $1)
 	
 	echo "$ts $bw"
 }

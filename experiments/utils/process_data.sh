@@ -24,7 +24,7 @@ for tcpd in $tcpdumpfiles; do 	# $(ls traffic*)
 		cat $tcpd | getTrafficPktLen > "$tcpd.pktlen"
 		
 		# debug
-		[ $DEBUG ] && tail -v -5 "$tcpd.pktlen"
+		[ $DEBUG ] && tail -v -n 5 "$tcpd.pktlen"
 	fi
 done
 
@@ -36,16 +36,20 @@ for mps in $mpstatfiles; do 	# $(ls load_*)
 		cat $mps | getTimeIdle > "$mps.idle"
 		
 		#debug
-		[ $DEBUG ] && tail -v -5 "$mps.idle"
+		[ $DEBUG ] && tail -v -n 5 "$mps.idle"
 	fi
 done
 
 
-clientlog="trafficgencl.log"
-if [ -f $clientlog ]; then
-	# $(date "+%d %m %Y")
-	cat $clientlog | getInteractiveCli | getAverageOverS > "$clientlog.latency"
-	
-	# debug
-	[ $DEBUG ] && tail -v -5 "$clientlog.latency"
-fi
+cp logs/trafficgencl.log trafficgencl_before.log
+cp logs2/trafficgencl.log trafficgencl_after.log
+
+for clientlog in "trafficgencl_before.log" "trafficgencl_after.log"; do
+	if [ -f $clientlog ]; then
+		# $(date "+%d %m %Y")
+		cat $clientlog | getInteractiveCli | getAverageOverS > "$clientlog.latency"
+		
+		# debug
+		[ $DEBUG ] && tail -v -n 5 "$clientlog.latency"
+	fi
+done
