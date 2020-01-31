@@ -32,18 +32,22 @@ function getTimeIdle {
 	read
 	
 	awk '{ print $NF, "'$date'", $1, $2 }' | while read value datetime; do
-		echo $(dateToTimestamp $datetime) $value
+		echo $(dateToTimestamp "$datetime") $value
 	done
 }
 
-function myGetTimeIdle {
+#function myGetTimeIdle {
 #	awk '{ print $1 " " $NF }'
 #	awk 'BEGIN { FS="[ :]" } { if($4 == "PM") $1+=12; print mktime("'$3' '$1' '$2' " $1 " " $2 " " $3), $NF } }'
-}
+#}
 
 function getInteractiveCli {
 	#awk '{ print $2 $4 $8 }'
-	awk '{ if($4 == "INFO") { if($8 == "request:") req = $2; else print $2, req, $1, $8 } }' | awk 'BEGIN { FS = "[ :,-]" } { t2 = ($1 * 3600 + $2 * 60 + $3) * 1000 + $4; t1 = ($5 * 3600 + $6 * 60 + $7) * 1000 + $8; diff = t2 - t1; print mktime($9 " " $10 " " $11 " " $1 " " $2 " " $3), diff }'
+	awk '{ if($4 == "INFO") { if($8 == "request:") req = $2; else print $2, req, $1, $8 } }' | awk 'BEGIN { FS = "[ :,-]" } { t2 = ($1 * 3600 + $2 * 60 + $3) * 1000 + $4; t1 = ($5 * 3600 + $6 * 60 + $7) * 1000 + $8; diff = t2 - t1; print diff, $9 "-" $10 "-" $11 " " $1 ":" $2 ":" $3 }' | while read value datetime; do
+		echo $(dateToTimestamp "$datetime") $value
+	done
+	
+	#awk 'BEGIN { FS = "[ :,-]" } { t2 = ($1 * 3600 + $2 * 60 + $3) * 1000 + $4; t1 = ($5 * 3600 + $6 * 60 + $7) * 1000 + $8; diff = t2 - t1; print mktime($9 " " $10 " " $11 " " $1 " " $2 " " $3), diff }'
 	# e.g. 21:01:02,270 21:01:02,058 received:
 }
 
