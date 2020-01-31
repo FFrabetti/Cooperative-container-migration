@@ -20,7 +20,9 @@ whilef=$(whileBackground "measureTraffic")
 		curPackets=$(( countPkts - prevPackets ))
 		#timestamp=$(date +%s%N)
 		timestamp=$(tail -1 $tcpdumpfile | awk '{ print $1 }')
-		echo "$timestamp,$curPackets"
+		if [ $timestamp ]; then
+			echo "$timestamp,$curPackets"
+		fi
 		prevPackets=$countPkts
 		sleep $traffictime
 	done > $trafficfile

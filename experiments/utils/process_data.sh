@@ -8,18 +8,14 @@ source processing-functions.sh
 
 
 # channel bandwidth files
-bwfiles=(bandwidth_dst_src.txt bandwidth_dst_cli.txt bandwidth_dst_n1.txt bandwidth_dst_n2.txt bandwidth_cli_src.txt)
-
-for bw in $bwfiles; do 	# $(ls bandwidth_*)
+for bw in $(ls bandwidth_*); do
 	if [ -f $bw ]; then
 		echo "$bw: $(getBandwidth $bw)"
 	fi
 done
 
 
-tcpdumpfiles=(trafficin_src.txt trafficout_src.txt trafficin_dst.txt trafficout_dst.txt trafficin_cli.txt trafficout_cli.txt)
-
-for tcpd in $tcpdumpfiles; do 	# $(ls traffic*)
+for tcpd in $(ls traffic*); do
 	if [ -f $tcpd ]; then
 		cat $tcpd | getTrafficPktLen > "$tcpd.pktlen"
 		
@@ -29,9 +25,7 @@ for tcpd in $tcpdumpfiles; do 	# $(ls traffic*)
 done
 
 
-mpstatfiles=(load_src.txt load_dst.txt load_cli.txt)
-
-for mps in $mpstatfiles; do 	# $(ls load_*)
+for mps in $(ls load_*); do
 	if [ -f $mps ]; then
 		cat $mps | getTimeIdle > "$mps.idle"
 		
