@@ -16,12 +16,12 @@ function getTrafficPktLen {
 }
 
 function timestampToTime {
-	date -d @$1 +%H:%M:%S
+	TZ=UTC+5 date -d @$1 +%H:%M:%S
 }
 
 function dateToTimestamp {
 	# MM/DD/YYYY HH:MM:SS [PM]	
-	date --date="$1" +%s
+	TZ=UTC+5 date --date="$1" +%s
 }
 
 # the first line has the date:
