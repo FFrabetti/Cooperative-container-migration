@@ -84,9 +84,13 @@ sshroot $nodesrc "src_build_image.sh $basenet$src $basenet$dst $appversion $laye
 	docker run -d -v /etc/timezone:/etc/timezone:ro -v /etc/localtime:/etc/localtime:ro -p 8080:8080 --name trafficgen trafficgen:${appversion}d;"
 
 loadtime=1
-sshrootbg $nodesrc		"measureTraffic.sh 1 trafficin.txt $ip_if in; measureTraffic.sh 1 trafficout.txt $ip_if out; measureLoad.sh $loadtime loadlocal.txt"
-sshrootbg $nodedst		"measureTraffic.sh 1 trafficin.txt $ip_if in; measureTraffic.sh 1 trafficout.txt $ip_if out; measureLoad.sh $loadtime loadlocal.txt"
-sshrootbg $nodeclient	"measureTraffic.sh 1 trafficin.txt $ip_if in; measureTraffic.sh 1 trafficout.txt $ip_if out; measureLoad.sh $loadtime loadlocal.txt"
+
+nohup sshrootbg $nodesrc		"measureLoad.sh $loadtime loadlocal.txt; measureTraffic.sh 1 trafficin.txt $ip_if in"
+nohup sshrootbg $nodesrc 		"measureTraffic.sh 1 trafficout.txt $ip_if out"
+nohup sshrootbg $nodedst		"measureLoad.sh $loadtime loadlocal.txt; measureTraffic.sh 1 trafficin.txt $ip_if in"
+nohup sshrootbg $nodedst 		"measureTraffic.sh 1 trafficout.txt $ip_if out"
+nohup sshrootbg $nodeclient		"measureLoad.sh $loadtime loadlocal.txt; measureTraffic.sh 1 trafficin.txt $ip_if in"
+nohup sshrootbg $nodeclient 	"measureTraffic.sh 1 trafficout.txt $ip_if out"
 
 echo "Sleep for a few seconds, collecting baseline traffic/load..."
 sleep 10

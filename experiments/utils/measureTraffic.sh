@@ -9,8 +9,8 @@ direction=$4
 
 tcpdumpfile="tcpdump_$direction"
 
-tcpdump -i $intf -l --immediate-mode --direction=$direction -B 100000 -tt -U > $tcpdumpfile &
 runningBackground "tcpdump"
+> $tcpdumpfile
 
 whilef=$(whileBackground "measureTraffic")
 (
@@ -27,3 +27,5 @@ whilef=$(whileBackground "measureTraffic")
 		sleep $traffictime
 	done > $trafficfile
 ) &
+
+tcpdump -i $intf -l --immediate-mode --direction=$direction -B 100000 -tt -U > $tcpdumpfile
