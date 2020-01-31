@@ -8,7 +8,7 @@
 # docker container start [sec_]registry
 
 # ################ START/STOP LOCAL REGISTRY ################
-if [ $# -ne 1 ]; then
+if [ $# -eq 0 ]; then
 	docker container rm -f registry
 	docker run -d \
 		-p 5000:5000 \
@@ -22,15 +22,22 @@ else
 	echo "Running registry with TLS (certificate in $CERTS) ..."
 	
 	if [ ! -f "$CONFIG_FILE" ]; then
-		docker container rm -f sec_registry
+		CNAME="sec_registry"
+		PORT=443
+		if [ $# -eq 2 ]; then
+			CNAME="${CNAME}_$2"
+			PORT=$2
+		fi
+	
+		docker container rm -f $CNAME
 		docker run -d \
-			-p 443:443 \
+			-p $PORT:443 \
 			-v "$CERTS":/certs \
 			-e REGISTRY_HTTP_ADDR=0.0.0.0:443 \
 			-e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/domain.crt \
 			-e REGISTRY_HTTP_TLS_KEY=/certs/domain.key \
 			--restart=unless-stopped \
-			--name sec_registry \
+			--name $CNAME \
 			registry:2
 	else
 		# instead of using -e arguments, you can specify an alternate YAML configuration file by mounting it as a volume in the container

@@ -27,7 +27,7 @@ appversion=$5
 
 
 TT="int"
-EXPDIR="tm_sl_${TT}_$(date +%F_%H-%M-%S)"
+EXPDIR="cm_sl_${TT}_$(date +%F_%H-%M-%S)"
 mkdir -p $EXPDIR
 cp $loadparams "$EXPDIR/"
 echo "$@" > "$EXPDIR/args"
@@ -52,7 +52,7 @@ if [ $runfromscratch ]; then
 fi
 
 # 1.3 kill background processes from prev. runs
-for n in $nodesrc $nodedst $nodeclient; do
+for n in $nodesrc $nodedst $nodeclient $nodeone $nodetwo; do
 	sshroot $n "clean_bg.sh"
 done
 
@@ -75,16 +75,30 @@ fi
 bash set_load.sh $loadtimeout 	< $loadparams 	 > set_load.log 2>&1
 
 # TODO: add a 3rd arg to build_trafficgen.sh to use MB instead of KB
-sshroot $nodedst "docker rm -f \$(docker ps -q); docker system prune -fa --volumes; local_registry.sh certs;"
+sshroot $nodedst "docker rm -f \$(docker ps -q);
+	docker system prune -fa --volumes;
+	local_registry.sh certs;
+	local_registry.sh certs 7000;"
 
-sshroot $nodesrc "src_build_image.sh $basenet$src $basenet$dst $appversion $layersize;
+sshroot $nodeone "if [ ! \$(docker ps -q --filter 'name=sec_registry') ]; then local_registry.sh certs; fi"
+sshroot $nodetwo "if [ ! \$(docker ps -q --filter 'name=sec_registry') ]; then local_registry.sh certs; fi"
+
+sshroot $nodesrc "src_build_image.sh $basenet$src $basenet$dst $appversion $layersize $basenet$one $basenet$two;
 	docker container rm -f trafficgen;
 	docker run -d -v /etc/timezone:/etc/timezone:ro -v /etc/localtime:/etc/localtime:ro -p 8080:8080 --name trafficgen trafficgen:${appversion}d;"
+
+sshroot $nodesrc "docker tag trafficgen:${appversion}d $basenet$dst:7000/trafficgen:${appversion}d;
+				docker push $basenet$dst:7000/trafficgen:${appversion}d"
+				
+cm_setup.sh trafficgen $appversion "$basenet$dst:7000" "$basenet$src" "$basenet$one" "$basenet$two"
+
 
 loadtime=1
 sshrootbg $nodesrc		"measureTraffic.sh 1 trafficin.txt $ip_if in; measureTraffic.sh 1 trafficout.txt $ip_if out; measureLoad.sh $loadtime loadlocal.txt"
 sshrootbg $nodedst		"measureTraffic.sh 1 trafficin.txt $ip_if in; measureTraffic.sh 1 trafficout.txt $ip_if out; measureLoad.sh $loadtime loadlocal.txt"
 sshrootbg $nodeclient	"measureTraffic.sh 1 trafficin.txt $ip_if in; measureTraffic.sh 1 trafficout.txt $ip_if out; measureLoad.sh $loadtime loadlocal.txt"
+sshrootbg $nodeone		"measureTraffic.sh 1 trafficin.txt $ip_if in; measureTraffic.sh 1 trafficout.txt $ip_if out; measureLoad.sh $loadtime loadlocal.txt"
+sshrootbg $nodetwo		"measureTraffic.sh 1 trafficin.txt $ip_if in; measureTraffic.sh 1 trafficout.txt $ip_if out; measureLoad.sh $loadtime loadlocal.txt"
 
 echo "Sleep for a few seconds, collecting baseline traffic/load..."
 sleep 10
@@ -118,7 +132,7 @@ sleep 10
 
 # ################################################################
 beforemigr=$(date +%s%N)
-sshroot $nodedst "cpull_image_dest.sh https://$basenet$src trafficgen:${appversion}d https://$basenet$src https://$basenet$dst;
+sshroot $nodedst "cpull_image_dest.sh https://$basenet$src trafficgen:${appversion}d https://$basenet$dst:7000 https://$basenet$dst;
 	docker run -d -v /etc/timezone:/etc/timezone:ro -v /etc/localtime:/etc/localtime:ro -p 8080:8080 --name trafficgen $basenet$dst/trafficgen:${appversion}d;"
 aftermigr=$(date +%s%N)
 
@@ -164,3 +178,11 @@ scp root@$nodedst:"mpstat.$loadtime.txt" "$EXPDIR/load_dst.txt"
 scp root@$nodeclient:tcpdump_in "$EXPDIR/trafficin_cli.txt"
 scp root@$nodeclient:tcpdump_out "$EXPDIR/trafficout_cli.txt"
 scp root@$nodeclient:"mpstat.$loadtime.txt" "$EXPDIR/load_cli.txt"
+
+scp root@$nodeone:tcpdump_in "$EXPDIR/trafficin_n1.txt"
+scp root@$nodeone:tcpdump_out "$EXPDIR/trafficout_n1.txt"
+scp root@$nodeone:"mpstat.$loadtime.txt" "$EXPDIR/load_n1.txt"
+
+scp root@$nodetwo:tcpdump_in "$EXPDIR/trafficin_n2.txt"
+scp root@$nodetwo:tcpdump_out "$EXPDIR/trafficout_n2.txt"
+scp root@$nodetwo:"mpstat.$loadtime.txt" "$EXPDIR/load_n2.txt"
