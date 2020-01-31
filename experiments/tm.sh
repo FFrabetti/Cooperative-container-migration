@@ -74,7 +74,6 @@ fi
 
 bash set_load.sh $loadtimeout 	< $loadparams 	 > set_load.log 2>&1
 
-# TODO: add a 3rd arg to build_trafficgen.sh to use MB instead of KB
 sshroot $nodedst "docker rm -f \$(docker ps -q);
 	docker system prune -fa --volumes;
 	local_registry.sh certs;"
@@ -95,13 +94,14 @@ sshrootbg $nodeclient 	"measureTraffic.sh 1 trafficout.txt $ip_if out"
 echo "Sleep for a few seconds, collecting baseline traffic/load..."
 sleep 10
 
-sshroot $nodeclient "
-	if [ ! -d trafficgencl ]; then
+sshroot $nodeclient "if [ ! -d trafficgencl ]; then
 		tar -xf Cooperative-container-migration/executable/trafficgencl.tar;
 		cd trafficgencl;
 		docker build -t trafficgencl:1.0 .;
 		cd ..;
 		mkdir -p logs;
+	else
+		(cd logs; for f in *.log; do > $f; done)
 	fi"
 
 respSize=1000
@@ -128,7 +128,7 @@ sshroot $nodedst "cpull_image_dest.sh https://$basenet$src trafficgen:${appversi
 	docker run -d -v /etc/timezone:/etc/timezone:ro -v /etc/localtime:/etc/localtime:ro -p 8080:8080 --name trafficgen $basenet$dst/trafficgen:${appversion}d;"
 aftermigr=$(date +%s%N)
 
-sshrootbg $nodeclient "mkdir -p logs2;
+sshrootbg $nodeclient "mkdir -p logs2; (cd logs2; for f in *.log; do > $f; done);
 	interactive_client.sh $respSize $prTimeFile | docker run -v /etc/timezone:/etc/timezone:ro -v /etc/localtime:/etc/localtime:ro -i --rm -v \"\$(pwd)/logs2\":/logs \
 	--name tgenclintdst trafficgencl:1.0 \
 	java -jar trafficgencl.jar interactive http://$basenet$dst:8080/trafficgen/interactive &"
