@@ -19,21 +19,26 @@ function timestampToTime {
 	date -d @$1 +%H:%M:%S
 }
 
+function dateToTimestamp {
+	# MM/DD/YYYY HH:MM:SS [PM]	
+	date --date="$1" +%s
+}
+
 # the first line has the date:
 # Linux 4.4.0-142-generic (ubuntu4) 	01/24/2020 	_x86_64_	(2 CPU)
-# AM or PM is in $2
-function getTimeIdle { # e.g. 10:44:47 97.47
+function getTimeIdle {
 	read one two three date other
-	local tokens=$(echo $date | awk 'BEGIN { FS="/" } { print $1,$2,$3 }')
 	read
 	read
 	
-	myGetTimeIdle $tokens
+	awk '{ print $NF, "'$date'", $1, $2 }' | while read value datetime; do
+		echo $(dateToTimestamp $datetime) $value
+	done
 }
 
 function myGetTimeIdle {
 #	awk '{ print $1 " " $NF }'
-	awk 'BEGIN { FS="[ :]" } { print mktime("'$3' '$1' '$2' " $1 " " $2 " " $3), $NF }'
+#	awk 'BEGIN { FS="[ :]" } { if($4 == "PM") $1+=12; print mktime("'$3' '$1' '$2' " $1 " " $2 " " $3), $NF } }'
 }
 
 function getInteractiveCli {

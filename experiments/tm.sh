@@ -85,12 +85,12 @@ sshroot $nodesrc "src_build_image.sh $basenet$src $basenet$dst $appversion $laye
 
 loadtime=1
 
-nohup sshrootbg $nodesrc		"measureLoad.sh $loadtime loadlocal.txt; measureTraffic.sh 1 trafficin.txt $ip_if in"
-nohup sshrootbg $nodesrc 		"measureTraffic.sh 1 trafficout.txt $ip_if out"
-nohup sshrootbg $nodedst		"measureLoad.sh $loadtime loadlocal.txt; measureTraffic.sh 1 trafficin.txt $ip_if in"
-nohup sshrootbg $nodedst 		"measureTraffic.sh 1 trafficout.txt $ip_if out"
-nohup sshrootbg $nodeclient		"measureLoad.sh $loadtime loadlocal.txt; measureTraffic.sh 1 trafficin.txt $ip_if in"
-nohup sshrootbg $nodeclient 	"measureTraffic.sh 1 trafficout.txt $ip_if out"
+sshrootbg $nodesrc		"measureLoad.sh $loadtime loadlocal.txt; measureTraffic.sh 1 trafficin.txt $ip_if in"
+sshrootbg $nodesrc 		"measureTraffic.sh 1 trafficout.txt $ip_if out"
+sshrootbg $nodedst		"measureLoad.sh $loadtime loadlocal.txt; measureTraffic.sh 1 trafficin.txt $ip_if in"
+sshrootbg $nodedst 		"measureTraffic.sh 1 trafficout.txt $ip_if out"
+sshrootbg $nodeclient		"measureLoad.sh $loadtime loadlocal.txt; measureTraffic.sh 1 trafficin.txt $ip_if in"
+sshrootbg $nodeclient 	"measureTraffic.sh 1 trafficout.txt $ip_if out"
 
 echo "Sleep for a few seconds, collecting baseline traffic/load..."
 sleep 10
