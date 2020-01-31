@@ -101,7 +101,7 @@ sshroot $nodeclient "if [ ! -d trafficgencl ]; then
 		cd ..;
 		mkdir -p logs;
 	else
-		(cd logs; for f in *.log; do > $f; done)
+		for f in logs/*.log; do > \$f; done;
 	fi"
 
 respSize=1000
@@ -128,7 +128,7 @@ sshroot $nodedst "cpull_image_dest.sh https://$basenet$src trafficgen:${appversi
 	docker run -d -v /etc/timezone:/etc/timezone:ro -v /etc/localtime:/etc/localtime:ro -p 8080:8080 --name trafficgen $basenet$dst/trafficgen:${appversion}d;"
 aftermigr=$(date +%s%N)
 
-sshrootbg $nodeclient "mkdir -p logs2; (cd logs2; for f in *.log; do > $f; done);
+sshrootbg $nodeclient "mkdir -p logs2; for f in logs2/*.log; do > \$f; done;
 	interactive_client.sh $respSize $prTimeFile | docker run -v /etc/timezone:/etc/timezone:ro -v /etc/localtime:/etc/localtime:ro -i --rm -v \"\$(pwd)/logs2\":/logs \
 	--name tgenclintdst trafficgencl:1.0 \
 	java -jar trafficgencl.jar interactive http://$basenet$dst:8080/trafficgen/interactive &"
