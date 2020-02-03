@@ -38,9 +38,9 @@ cp Cooperative-container-migration/experiments/args/* args/
 
 
 # -------- Distribute updated setup.sh --------
-for n in node1-{1..8}; do
+for n in node1-{1..4}; do
 	scp Cooperative-container-migration/experiments/utils/setup.sh root@$n:setup.sh
-	# ssh root@$n "./setup.sh"
+	ssh root@$n "./setup.sh"
 done
 
 

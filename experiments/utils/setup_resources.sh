@@ -8,7 +8,7 @@ while (( $# )); do
 	node=$(getNode $1)
 	ip=$(getIp $1)
 	sshroot $node "ifconfig $ip_if $ip netmask $netmask up;
-		./setup.sh;
+		[ -d bin ] || ./setup.sh;
 		sleep 2;
 		echo \$(hostname): \$(ip a show up dev $ip_if | grep 'inet ');
 	" &

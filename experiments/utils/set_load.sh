@@ -7,5 +7,5 @@ timeout=$1
 # load value between 1-10
 
 while read node load; do
-	sshroot ${!node} "set_local_load.sh $load $timeout" < /dev/null
+	sshrootbg ${!node} "set_local_load.sh $load $timeout" < /dev/null
 done
