@@ -72,12 +72,12 @@ bash set_load.sh $loadtimeout < $loadparams 2>&1 | tee set_load.log
 
 
 # 6. Clean destination and run local registry
-sshroot $nodedst "docker rm -f \$(docker ps -qa);
+sshroot $nodedst "docker rm -f \$(docker ps -qa) 2>/dev/null;
 	docker system prune -fa --volumes;
 	local_registry.sh certs;"
 
 # 6.1 Clean client
-sshroot $nodeclient "docker rm -f \$(docker ps -qa);
+sshroot $nodeclient "docker rm -f \$(docker ps -qa) 2>/dev/null;
 	mkdir -p logs;  for f in logs/*.log; do > \$f; done;
 	mkdir -p logs2; for f in logs2/*.log; do > \$f; done;"
 
@@ -88,7 +88,7 @@ echo "Build container image and distribute layers"
 	echo "$basenet$src ${appversion}d"
 	echo "$basenet$dst $appversion"
 } | sshroot $nodesrc "src_build_image.sh $appversion $layersize;
-	docker container rm -f trafficgen;
+	docker container rm -f trafficgen 2>/dev/null;
 	docker run -d -v /etc/timezone:/etc/timezone:ro -v /etc/localtime:/etc/localtime:ro -p 8080:8080 --name trafficgen trafficgen:${appversion}d;"
 
 # 9. Measure load and traffic

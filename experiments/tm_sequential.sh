@@ -37,13 +37,20 @@ mkdir -p args
 cp Cooperative-container-migration/experiments/args/* args/
 
 
+# -------- Distribute updated setup.sh --------
+for n in node1-{1..8}; do
+	scp Cooperative-container-migration/experiments/utils/setup.sh root@$n:setup.sh
+	# ssh root@$n "./setup.sh"
+done
+
+
 # bash tm.sh (channelparams | '0') loadparams loadtimeout layersize appversion respsize
 prevchannel=""
 i=0
 for ch in args/nodelay_ch.txt args/delay1ms_ch.txt args/delay5ms_ch.txt; do
 	for ls in "100" "1MB" "10MB" "100MB"; do
 		for ld in args/srchigh_load.txt args/dsthigh_load.txt args/eqmed_load.txt; do
-			if [ -f $ch ] && [ $ch != $prevchannel ]; then
+			if [ -f $ch ] && [ $ch != "$prevchannel" ]; then
 				charg=$ch
 				prevchannel=$ch
 			else
@@ -58,7 +65,18 @@ for ch in args/nodelay_ch.txt args/delay1ms_ch.txt args/delay5ms_ch.txt; do
 
 				# terminate all ssh connections
 				ps -C ssh -o pid= | xargs -r kill -kill
+				
+				# ################ DEBUG ################
+				# terminate after one test
+				exit 0
+				# ################ DEBUG ################
 			fi
 		done
 	done
 done
+
+# -------- Process results --------
+# EXPDIR="..."
+# cd $EXPDIR
+# bash process_data.sh
+# bash test.sh pr.* > results.txt
