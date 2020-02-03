@@ -71,14 +71,27 @@ fi
 bash set_load.sh $loadtimeout < $loadparams 2>&1 | tee set_load.log
 
 
-sshroot $nodedst "docker rm -f \$(docker ps -q);
+# 6. Clean destination and run local registry
+sshroot $nodedst "docker rm -f \$(docker ps -qa);
 	docker system prune -fa --volumes;
 	local_registry.sh certs;"
 
-sshroot $nodesrc "src_build_image.sh $basenet$src $basenet$dst $appversion $layersize;
+# 6.1 Clean client
+sshroot $nodeclient "docker rm -f \$(docker ps -qa);
+	mkdir -p logs;  for f in logs/*.log; do > \$f; done;
+	mkdir -p logs2; for f in logs2/*.log; do > \$f; done;"
+
+# 7. Build container image and distribute layers (push)
+echo "Build container image and distribute layers"
+# 8. Start container at the source
+{ 	# registry imagetag (tag and push images)
+	echo "$basenet$src ${appversion}d"
+	echo "$basenet$dst $appversion"
+} | sshroot $nodesrc "src_build_image.sh $appversion $layersize;
 	docker container rm -f trafficgen;
 	docker run -d -v /etc/timezone:/etc/timezone:ro -v /etc/localtime:/etc/localtime:ro -p 8080:8080 --name trafficgen trafficgen:${appversion}d;"
 
+# 9. Measure load and traffic
 sshrootbg $nodesrc		"measureLoad.sh 1 loadlocal.txt; measureTraffic.sh 1 trafficin.txt $ip_if in"
 sshrootbg $nodesrc 		"measureTraffic.sh 1 trafficout.txt $ip_if out"
 sshrootbg $nodedst		"measureLoad.sh 1 loadlocal.txt; measureTraffic.sh 1 trafficin.txt $ip_if in"
@@ -89,14 +102,14 @@ sshrootbg $nodeclient 	"measureTraffic.sh 1 trafficout.txt $ip_if out"
 echo "Sleep for a few seconds, collecting baseline traffic/load..."
 sleep 10
 
+# 10. Start client container
+echo "Start client container"
 sshroot $nodeclient "if [ ! -d trafficgencl ]; then
 		tar -xf Cooperative-container-migration/executable/trafficgencl.tar;
 		cd trafficgencl;
 		docker build -t trafficgencl:1.0 .;
 		cd ..;
 		mkdir -p logs;
-	else
-		for f in logs/*.log; do > \$f; done;
 	fi"
 
 respSize=1000
@@ -117,21 +130,24 @@ sshrootbg $nodeclient "interactive_client.sh $respSize $prTimeFile | docker run 
 echo "Sleep for a few seconds, collecting pre-migration measurements..."
 sleep 10
 
+
 # ################################################################
 beforemigr=$(date +%s%N)
 sshroot $nodedst "cpull_image_dest.sh https://$basenet$src trafficgen:${appversion}d https://$basenet$src https://$basenet$dst;
 	docker run -d -v /etc/timezone:/etc/timezone:ro -v /etc/localtime:/etc/localtime:ro -p 8080:8080 --name trafficgen $basenet$dst/trafficgen:${appversion}d;"
 aftermigr=$(date +%s%N)
 
-sshrootbg $nodeclient "mkdir -p logs2; for f in logs2/*.log; do > \$f; done;
-	interactive_client.sh $respSize $prTimeFile | docker run -v /etc/timezone:/etc/timezone:ro -v /etc/localtime:/etc/localtime:ro -i --rm -v \"\$(pwd)/logs2\":/logs \
+sshrootbg $nodeclient "interactive_client.sh $respSize $prTimeFile | docker run -v /etc/timezone:/etc/timezone:ro -v /etc/localtime:/etc/localtime:ro -i --rm -v \"\$(pwd)/logs2\":/logs \
 	--name tgenclintdst trafficgencl:1.0 \
-	java -jar trafficgencl.jar interactive http://$basenet$dst:8080/trafficgen/interactive &"
+	java -jar trafficgencl.jar interactive http://$basenet$dst:8080/trafficgen/interactive &;
+	docker container rm -f tgenclint;"
 # ################################################################
+
 
 echo "Sleep for a few seconds, collecting post-migration measurements..."
 sleep 10
 
+# 11. Data collection
 echo "$beforemigr $aftermigr" > "$EXPDIR/migr_time"
 echo "$(((aftermigr - beforemigr) / 1000000)) ms" >> "$EXPDIR/migr_time"
 
@@ -144,9 +160,7 @@ scp -r root@$nodesrc:srv_logs "$EXPDIR/srv_logs_src/"
 sshroot $nodedst "mkdir -p srv_logs; docker cp trafficgen:/usr/local/tomcat/logs srv_logs"
 scp -r root@$nodedst:srv_logs "$EXPDIR/srv_logs_dst/"
 
-
 cp *.log bandwidth_*.txt "$EXPDIR/" 	# (bandwidth_*.txt from measure_bw.sh)
-
 
 # these just have a packet count
 # scp root@$nodesrc:trafficin.txt "$EXPDIR/trafficin_src.txt"

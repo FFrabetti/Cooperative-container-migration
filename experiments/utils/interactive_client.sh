@@ -6,7 +6,7 @@ RESPONSE_SIZE=$1
 PR_FILE="$2"
 
 while [ -f "$PR_FILE" ]; do
-	while read pt; do
+	while [ -f "$PR_FILE" ] && read pt; do
 		echo "$pt $RESPONSE_SIZE"
 		sleep 1
 	done < "$PR_FILE"
