@@ -23,22 +23,26 @@
 # trafficgen dummy application
 # 	Response size:
 # 	- fixed to ...
-respsize=10000
+respsize=$((40 * 1024))
 # 	Request rate:
 # 	- 0.5 min delay between requests
 
 prTimeFile="pr_sequence"
 # len minrange maxrange
-bash generate_rand_seq.sh 100 10 500 > $prTimeFile
+bash generate_rand_seq.sh 100 10 100 > $prTimeFile
 
 loadtimeout=10000
+
+mkdir -p args
+cp Cooperative-container-migration/experiments/args/* args/
+
 
 # bash tm.sh (channelparams | '0') loadparams loadtimeout layersize appversion respsize
 prevchannel=""
 i=0
-for ch in nodelay_ch.txt delay1m_ch.txt delay5ms_ch.txt; do
+for ch in args/nodelay_ch.txt args/delay1ms_ch.txt args/delay5ms_ch.txt; do
 	for ls in "100" "1MB" "10MB" "100MB"; do
-		for ld in srchigh_load.txt dsthigh_load.txt eqmed_load.txt; do
+		for ld in args/srchigh_load.txt args/dsthigh_load.txt args/eqmed_load.txt; do
 			if [ -f $ch ] && [ $ch != $prevchannel ]; then
 				charg=$ch
 				prevchannel=$ch
@@ -51,6 +55,9 @@ for ch in nodelay_ch.txt delay1m_ch.txt delay5ms_ch.txt; do
 				i=$((i+1))
 				bash tm.sh $charg $ld $loadtimeout $ls "app$ls" $respsize 2>&1 | tee "tm${i}.out"
 				sleep 10
+
+				# terminate all ssh connections
+				ps -C ssh -o pid= | xargs -r kill -kill
 			fi
 		done
 	done
