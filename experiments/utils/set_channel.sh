@@ -8,11 +8,13 @@ source config.sh || { echo "config.sh not found"; exit 1; }
 function createParent {
 	echo -e "$1 \n" \
 "tc qdisc del dev $ip_if root;
-tc qdisc add dev $ip_if handle 1: root htb;
+tc qdisc add dev $ip_if root handle 1: htb;
 tc class add dev $ip_if parent 1: classid 1:1 htb rate 900Mbps ceil 900Mbps;"
 	
-	sshroot $1 "tc qdisc del dev $ip_if root;
-				tc qdisc add dev $ip_if handle 1: root htb;
+	# note: del would fail if no rule was set
+	# tc qdisc show dev $ip_if
+	sshroot $1 "tc qdisc del dev $ip_if root 2>/dev/null;
+				tc qdisc add dev $ip_if root handle 1: htb;
 				tc class add dev $ip_if parent 1: classid 1:1 htb rate 900Mbps ceil 900Mbps;"
 }
 
