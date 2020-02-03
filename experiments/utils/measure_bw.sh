@@ -28,18 +28,19 @@ function testbw {
 					ps -C iperf3 -o pid= | xargs -r kill -kill"
 }
 
-
-echo "$0: $nodedst - $nodesrc"
-testbw $nodedst 0 $nodesrc "$basenet$dst" > bandwidth_dst_src.txt
-
-echo "$0: $nodedst - $nodeclient"
-testbw $nodedst 0 $nodeclient "$basenet$dst" > bandwidth_dst_cli.txt
-
-echo "$0: $nodedst - $nodeone"
-testbw $nodedst 0 $nodeone "$basenet$dst" > bandwidth_dst_n1.txt
-
-echo "$0: $nodedst - $nodetwo"
-testbw $nodedst 30 $nodetwo "$basenet$dst" > bandwidth_dst_n2.txt
-
 echo "$0: $nodeclient - $nodesrc"
 testbw $nodeclient 30 $nodesrc "$basenet$client" > bandwidth_cli_src.txt
+
+while (( $# )); do
+	iperfcl=$1
+	node=$(getNode $iperfcl)
+	
+	echo "$0: $nodedst - $node"
+	srv_timeout=0
+	if [ $# -le 1 ]; then
+		srv_timeout=30
+	fi
+	testbw $nodedst $srv_timeout $node "$basenet$dst" > bandwidth_dst_${iperfcl}.txt
+
+	shift
+done

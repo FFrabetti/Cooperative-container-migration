@@ -9,7 +9,6 @@ direction=$4
 
 tcpdumpfile="tcpdump_$direction"
 
-runningBackground "tcpdump"
 > $tcpdumpfile
 
 whilef=$(whileBackground "measureTraffic")

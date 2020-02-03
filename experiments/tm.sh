@@ -26,53 +26,50 @@ layersize=$4
 appversion=$5
 
 
-TT="int"
+TT="int"	 # traffic type
 EXPDIR="tm_sl_${TT}_$(date +%F_%H-%M-%S)"
 mkdir -p $EXPDIR
 cp $loadparams "$EXPDIR/"
 echo "$@" > "$EXPDIR/args"
 
-if [ -f $1 ]; then
+if [ -f $1 ]; then 	# channel parameters given/changed -> run from scratch
 	runfromscratch=true
 	cp $channelparams "$EXPDIR/"
 fi
 
-if [ $runfromscratch ]; then
-	# 1. Set network interfaces + setup.sh (git pull and .sh links in bin)
-	bash setup_resources.sh > setup_resources.log 2>&1
 
-	# 1.1 /root/bin directories should have been created in all nodes
-	sshroot $nodedst "[ -d /root/bin ]" || { echo "error! check setup_resources.log"; exit 1; }
-
-	# 1.2 Check nodes and IPs
-	sleep 5
-	for n in $nodemaster $nodesrc $nodedst $nodeclient $nodeone $nodetwo; do
-		sshroot $n "hostname; ip a show up dev $ip_if | grep 'inet '"
-	done
-fi
-
-# 1.3 kill background processes from prev. runs
+# 0. kill background processes from previous runs
 for n in $nodesrc $nodedst $nodeclient; do
 	sshroot $n "clean_bg.sh"
 done
 
 if [ $runfromscratch ]; then
+	# 1. Set network interfaces + setup.sh (git pull and .sh links in bin)
+	bash setup_resources.sh src dst client 2>&1 | tee setup_resources.log
+
+	# /root/bin directories should have been created
+	sshroot $nodedst "[ -d /root/bin ]" || { echo "Error!"; exit 1; }
+
 	# 2. Create and sign certificates
-	bash create_certificate_all.sh > create_certificate_all.log 2>&1
+	for n in src dst; do
+		node=$(getNode $n)
+		ip=$(getIp $n)
+		sshroot $node "create_certificate.sh $ip"
+	done 2>&1 | tee create_certificate.log 
 
-	# 2.1 /root/certs directories should have been created in all nodes
-	sshroot $nodedst "[ -d /root/certs ]" || { echo "error! check create_certificate_all.log"; exit 1; }
+	# /root/certs directories should have been created
+	sshroot $nodedst "[ -d /root/certs ]" || { echo "Error!"; exit 1; }
 
-	# 3. Set channels and load baselines
-	bash set_channel.sh				< $channelparams > set_channel.log 2>&1
+	# 3. Set channels
+	bash set_channel.sh	< $channelparams 2>&1 | tee set_channel.log
 
-	# 4. Measure bandwidth
-	# it takes a while...
-	echo "Measuring bandwidth... "
-	bash measure_bw.sh
+	# 4. Measure bandwidth (client-src + $...-dst)
+	bash measure_bw.sh src client
 fi
 
-bash set_load.sh $loadtimeout 	< $loadparams 	 > set_load.log 2>&1
+# 5. Set load baseline
+bash set_load.sh $loadtimeout < $loadparams 2>&1 | tee set_load.log
+
 
 sshroot $nodedst "docker rm -f \$(docker ps -q);
 	docker system prune -fa --volumes;
@@ -82,13 +79,11 @@ sshroot $nodesrc "src_build_image.sh $basenet$src $basenet$dst $appversion $laye
 	docker container rm -f trafficgen;
 	docker run -d -v /etc/timezone:/etc/timezone:ro -v /etc/localtime:/etc/localtime:ro -p 8080:8080 --name trafficgen trafficgen:${appversion}d;"
 
-loadtime=1
-
-sshrootbg $nodesrc		"measureLoad.sh $loadtime loadlocal.txt; measureTraffic.sh 1 trafficin.txt $ip_if in"
+sshrootbg $nodesrc		"measureLoad.sh 1 loadlocal.txt; measureTraffic.sh 1 trafficin.txt $ip_if in"
 sshrootbg $nodesrc 		"measureTraffic.sh 1 trafficout.txt $ip_if out"
-sshrootbg $nodedst		"measureLoad.sh $loadtime loadlocal.txt; measureTraffic.sh 1 trafficin.txt $ip_if in"
+sshrootbg $nodedst		"measureLoad.sh 1 loadlocal.txt; measureTraffic.sh 1 trafficin.txt $ip_if in"
 sshrootbg $nodedst 		"measureTraffic.sh 1 trafficout.txt $ip_if out"
-sshrootbg $nodeclient		"measureLoad.sh $loadtime loadlocal.txt; measureTraffic.sh 1 trafficin.txt $ip_if in"
+sshrootbg $nodeclient		"measureLoad.sh 1 loadlocal.txt; measureTraffic.sh 1 trafficin.txt $ip_if in"
 sshrootbg $nodeclient 	"measureTraffic.sh 1 trafficout.txt $ip_if out"
 
 echo "Sleep for a few seconds, collecting baseline traffic/load..."
@@ -138,6 +133,7 @@ echo "Sleep for a few seconds, collecting post-migration measurements..."
 sleep 10
 
 echo "$beforemigr $aftermigr" > "$EXPDIR/migr_time"
+echo "$(((aftermigr - beforemigr) / 1000000)) ms" >> "$EXPDIR/migr_time"
 
 scp -r root@$nodeclient:logs "$EXPDIR/"
 scp -r root@$nodeclient:logs2 "$EXPDIR/"
@@ -149,11 +145,7 @@ sshroot $nodedst "mkdir -p srv_logs; docker cp trafficgen:/usr/local/tomcat/logs
 scp -r root@$nodedst:srv_logs "$EXPDIR/srv_logs_dst/"
 
 
-cp setup_resources.log "$EXPDIR/"
-cp create_certificate_all.log "$EXPDIR/"
-cp set_channel.log "$EXPDIR/"
-cp set_load.log "$EXPDIR/"
-cp bandwidth* "$EXPDIR/" 	# measure_bw.sh
+cp *.log bandwidth_*.txt "$EXPDIR/" 	# (bandwidth_*.txt from measure_bw.sh)
 
 
 # these just have a packet count
@@ -161,12 +153,12 @@ cp bandwidth* "$EXPDIR/" 	# measure_bw.sh
 # scp root@$nodesrc:trafficout.txt "$EXPDIR/trafficout_src.txt"
 scp root@$nodesrc:tcpdump_in "$EXPDIR/trafficin_src.txt"
 scp root@$nodesrc:tcpdump_out "$EXPDIR/trafficout_src.txt"
-scp root@$nodesrc:"mpstat.$loadtime.txt" "$EXPDIR/load_src.txt"
+scp root@$nodesrc:"mpstat.txt" "$EXPDIR/load_src.txt"
 
 scp root@$nodedst:tcpdump_in "$EXPDIR/trafficin_dst.txt"
 scp root@$nodedst:tcpdump_out "$EXPDIR/trafficout_dst.txt"
-scp root@$nodedst:"mpstat.$loadtime.txt" "$EXPDIR/load_dst.txt"
+scp root@$nodedst:"mpstat.txt" "$EXPDIR/load_dst.txt"
 
 scp root@$nodeclient:tcpdump_in "$EXPDIR/trafficin_cli.txt"
 scp root@$nodeclient:tcpdump_out "$EXPDIR/trafficout_cli.txt"
-scp root@$nodeclient:"mpstat.$loadtime.txt" "$EXPDIR/load_cli.txt"
+scp root@$nodeclient:"mpstat.txt" "$EXPDIR/load_cli.txt"

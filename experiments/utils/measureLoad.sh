@@ -22,10 +22,9 @@ fi
 loadtime=$1
 idlefile=$2
 
-mpstatfile="mpstat.$loadtime.txt"
+mpstatfile="mpstat.txt"
 
 mpstat $loadtime > $mpstatfile &
-runningBackground "mpstat"
 
 whilef=$(whileBackground "measureLoad")
 while [ -e $whilef ]; do

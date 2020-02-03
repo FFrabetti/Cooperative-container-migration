@@ -2,8 +2,8 @@
 
 source config.sh || { echo "config.sh not found"; exit 1; }
 
-while read name; do
+for name in mpstat tcpdump stress; do
 	ps -C $name -o pid= | xargs -r kill -kill
-done < "$backgrounddir/running.list"
+done
 
 rm -rf "$backgrounddir/*"

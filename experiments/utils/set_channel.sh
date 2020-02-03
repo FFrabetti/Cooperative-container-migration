@@ -3,7 +3,7 @@
 
 source config.sh || { echo "config.sh not found"; exit 1; }
 
-var=10ms;
+#var=10ms;
 
 function createParent {
 	sshroot $1 "tc qdisc del dev $ip_if root;

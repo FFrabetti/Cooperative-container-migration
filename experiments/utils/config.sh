@@ -31,18 +31,19 @@ ip_if="eth0"
 
 # e.g. ip=$(getIp master)
 function getIp {
-	local name=$1;
+	local name=$1
 	echo $basenet${!name}
 }
 
-backgrounddir="$HOME/tmp/background"
-mkdir -p $backgrounddir
-
-function runningBackground {
-	echo $1 >> "$backgrounddir/running.list"
+function getNode {
+	local name="node$1"
+	echo ${!name}
 }
 
+backgrounddir="$HOME/tmp/background"
+
 function whileBackground {
+	[ -d $backgrounddir ] || mkdir -p $backgrounddir
 	local fname="$backgrounddir/$1"
 	echo $fname | tee $fname
 }
