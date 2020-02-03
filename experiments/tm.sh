@@ -4,7 +4,7 @@ source config.sh || { echo "config.sh not found"; exit 1; }
 
 usage () {
   echo "Usage:"
-  echo "   ./$(basename $0) (channelparams | '0') loadparams loadtimeout layersize appversion"
+  echo "   ./$(basename $0) (channelparams | '0') loadparams loadtimeout layersize appversion respsize"
   exit 0
 }
 
@@ -14,7 +14,7 @@ if [[ ( $# == "--help") ||  $# == "-h" ]]
                 exit 0
 fi
 
-if [ "$#" -lt 5 ]; then
+if [ "$#" -lt 6 ]; then
   echo "Insufficient parameters!"
   usage
 fi
@@ -24,7 +24,7 @@ loadparams=$2
 loadtimeout=$3
 layersize=$4
 appversion=$5
-
+respSize=$6
 
 TT="int"	 # traffic type
 EXPDIR="tm_sl_${TT}_$(date +%F_%H-%M-%S)"
@@ -112,9 +112,7 @@ sshroot $nodeclient "if [ ! -d trafficgencl ]; then
 		mkdir -p logs;
 	fi"
 
-respSize=1000
 prTimeFile="pr_sequence"
-
 if [ ! -f $prTimeFile ]; then
 	# len minrange maxrange
 	bash generate_rand_seq.sh 100 10 1000 > $prTimeFile
@@ -145,7 +143,7 @@ sshrootbg $nodeclient "interactive_client.sh $respSize $prTimeFile | docker run 
 
 
 echo "Sleep for a few seconds, collecting post-migration measurements..."
-sleep 10
+sleep 20 	# for tcpdump weird buffered behavior...
 
 # 11. Data collection
 echo "$beforemigr $aftermigr" > "$EXPDIR/migr_time"

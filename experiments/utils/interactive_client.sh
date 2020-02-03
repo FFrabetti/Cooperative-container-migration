@@ -8,6 +8,6 @@ PR_FILE="$2"
 while [ -f "$PR_FILE" ]; do
 	while [ -f "$PR_FILE" ] && read pt; do
 		echo "$pt $RESPONSE_SIZE"
-		sleep 1
+		sleep 0.5
 	done < "$PR_FILE"
 done 
