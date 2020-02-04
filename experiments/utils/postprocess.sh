@@ -4,6 +4,7 @@ currdir=$(pwd)
 
 for dir in "$@"; do
 	cd $dir
+	pwd
 	bash process_data.sh 	# creates pr.* files
 	bash test.sh pr.* > results.txt
 	

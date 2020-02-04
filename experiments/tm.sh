@@ -143,7 +143,7 @@ sshrootbg $nodeclient "(interactive_client.sh $respSize $prTimeFile | docker run
 
 
 echo "Sleep for a few seconds, collecting post-migration measurements..."
-sleep 20 	# for tcpdump weird buffered behavior...
+sleep 30 	# for tcpdump weird buffered behavior...
 
 # 11. Data collection
 echo "$beforemigr $aftermigr" > "$EXPDIR/migr_time"

@@ -10,7 +10,8 @@ function getBandwidth { # FILENAME -> TIMESTAMP BW
 function getTrafficPktLen {
 	#awk '{ print $1 " " $NF }'
 	#awk 'BEGIN { FS = "[. ]" } { print $1 " " $3 }'
-	awk 'BEGIN { FS = "[. ]" } { arr[$1]+=$NF } END { for(key in arr) print key " " arr[key] }' | sort
+	# e.g. length 259: 
+	awk 'BEGIN { FS="[:. ]" } { for(i=1; i<NF; i++) { if($i == "length") arr[$1]+=$(i+1) } } END { for(key in arr) print key " " arr[key] }' | sort
 	
 	# ... { for(key in arr) { system("date -d @" key " +%H:%M:%S"); print key " " arr[key] } } ... 
 }

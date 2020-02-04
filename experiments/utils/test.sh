@@ -9,7 +9,7 @@ for var in "$@"; do
 done | sort > mergedresults.txt
 
 # headers
-echo "$@"
+echo "timestamp" "$@"
 
 echo "999 v f" >> mergedresults.txt
 cur_time=0
