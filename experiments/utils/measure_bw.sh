@@ -7,9 +7,10 @@ function testbw {
 	local timeout=$2
 	local src=$3
 	local srv=$4
+	local rev=""
 
-	if [ $# -lt 4 ]; then
-		srv=$node
+	if [ $# -eq 5 ]; then
+		rev="-R"
 	fi
 
 	ssh -f root@$node "(
@@ -23,12 +24,13 @@ function testbw {
 	echo "end of server part" >&2
 
 	sleep 2
-	ssh root@$src "date +%s%N; iperf3 -c $srv &
+	ssh root@$src "date +%s%N; iperf3 -c $srv $rev &
 					sleep 20
 					ps -C iperf3 -o pid= | xargs -r kill -kill"
 }
 
 echo "$0: $nodeclient - $nodesrc"
+testbw $nodeclient 0 $nodesrc "$basenet$client" reverse > bandwidth_src_cli.txt
 testbw $nodeclient 30 $nodesrc "$basenet$client" > bandwidth_cli_src.txt
 
 while (( $# )); do
@@ -40,6 +42,7 @@ while (( $# )); do
 	if [ $# -le 1 ]; then
 		srv_timeout=30
 	fi
+	testbw $nodedst 0 $node "$basenet$dst" reverse > bandwidth_${iperfcl}_dst.txt
 	testbw $nodedst $srv_timeout $node "$basenet$dst" > bandwidth_dst_${iperfcl}.txt
 
 	shift
