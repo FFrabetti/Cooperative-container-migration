@@ -42,6 +42,16 @@ function getTimeIdle {
 #	awk 'BEGIN { FS="[ :]" } { if($4 == "PM") $1+=12; print mktime("'$3' '$1' '$2' " $1 " " $2 " " $3), $NF } }'
 #}
 
+function processIfstat { # $1 filein $2 fileout
+	read date
+	read header1
+	read header2
+	while read hour int outt; do
+		echo $(dateToTimestamp "$date $hour") $int >> $1
+		echo $(dateToTimestamp "$date $hour") $outt >> $2
+	done
+}
+
 function getInteractiveCli {
 	#awk '{ print $2 $4 $8 }'
 	awk '{ if($4 == "INFO") { if($8 == "request:") req = $2; else print $2, req, $1, $8 } }' | awk 'BEGIN { FS = "[ :,-]" } { t2 = ($1 * 3600 + $2 * 60 + $3) * 1000 + $4; t1 = ($5 * 3600 + $6 * 60 + $7) * 1000 + $8; diff = t2 - t1; print diff, $9 "-" $10 "-" $11 " " $1 ":" $2 ":" $3 }' | while read value datetime; do

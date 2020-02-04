@@ -17,10 +17,11 @@ done
 
 for tcpd in $(ls traffic*); do
 	if [ -f $tcpd ]; then
-		cat $tcpd | getTrafficPktLen > "pr.$tcpd"
+		#cat $tcpd | getTrafficPktLen > "pr.$tcpd"
+		cat $tcpd | processIfstat "pr.${tcpd}_in" "pr.${tcpd}_out"
 		
 		# debug
-		[ $DEBUG ] && tail -v -n 5 "pr.$tcpd"
+		#[ $DEBUG ] && tail -v -n 5 "pr.$tcpd"
 	fi
 done
 
