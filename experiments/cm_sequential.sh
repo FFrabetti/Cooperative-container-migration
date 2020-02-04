@@ -38,13 +38,13 @@ cp Cooperative-container-migration/experiments/args/* args/
 
 
 # -------- Distribute updated setup.sh --------
-for n in node1-{1..4}; do
+for n in node1-{1..7}; do
 	scp Cooperative-container-migration/experiments/utils/setup.sh root@$n:setup.sh
 	ssh root@$n "./setup.sh"
 done
 
 
-# bash tm.sh (channelparams | '0') loadparams loadtimeout layersize appversion respsize
+# bash cm.sh (channelparams | '0') loadparams loadtimeout layersize appversion respsize
 prevchannel=""
 i=0
 starti=0
@@ -65,8 +65,8 @@ for ch in args/nodelay_ch.txt args/delay1ms_ch.txt args/delay5ms_ch.txt; do
 					charg=0
 				fi
 			
-				echo -e "tm.sh $charg $ld $loadtimeout $ls app$ls $respsize \n----------------"
-				bash tm.sh $charg $ld $loadtimeout $ls "app$ls" $respsize 2>&1 | tee "tm${i}.out"
+				echo -e "cm.sh $charg $ld $loadtimeout $ls app$ls $respsize \n----------------"
+				bash cm.sh $charg $ld $loadtimeout $ls "app$ls" $respsize 2>&1 | tee "cm${i}.out"
 				sleep 10
 
 				# terminate all ssh connections

@@ -72,7 +72,7 @@ bash set_load.sh $loadtimeout < $loadparams 2>&1 | tee set_load.log
 
 
 # 6. Clean destination and run local registry
-sshroot $nodedst "docker rm -f \$(docker ps -qa);
+sshroot $nodedst "docker rm -f \$(docker ps -qa) 2>/dev/null;
 	docker system prune -fa --volumes;
 	local_registry.sh certs;
 	local_registry.sh certs 7000;"
@@ -81,9 +81,9 @@ sshroot $nodeone "if [ ! \$(docker ps -q --filter 'name=^sec_registry$') ]; then
 sshroot $nodetwo "if [ ! \$(docker ps -q --filter 'name=^sec_registry$') ]; then local_registry.sh certs; fi"
 
 # 6.1 Clean client
-sshroot $nodeclient "docker rm -f \$(docker ps -qa);
-	mkdir -p logs;  for f in logs/*.log; do > \$f; done;
-	mkdir -p logs2; for f in logs2/*.log; do > \$f; done;"
+sshroot $nodeclient "docker rm -f \$(docker ps -qa) 2>/dev/null;
+	mkdir -p logs;  for f in logs/*.log; do  [ -f \$f ] && { > \$f; }; done;
+	mkdir -p logs2; for f in logs2/*.log; do [ -f \$f ] && { > \$f; }; done;"
 
 # 7. Build container image and distribute layers (push)
 echo "Build container image and distribute layers"
@@ -95,10 +95,10 @@ echo "Build container image and distribute layers"
 	echo "$basenet$two ${appversion}c"
 	echo "$basenet$dst:7000 ${appversion}d"
 } | sshroot $nodesrc "src_build_image.sh $appversion $layersize;
-	docker container rm -f trafficgen;
+	docker container rm -f trafficgen 2>/dev/null;
 	docker run -d -v /etc/timezone:/etc/timezone:ro -v /etc/localtime:/etc/localtime:ro -p 8080:8080 --name trafficgen trafficgen:${appversion}d;"
 				
-cm_setup.sh trafficgen $appversion "$basenet$dst:7000" "$basenet$src" "$basenet$one" "$basenet$two"
+cm_setup.sh trafficgen ${appversion}d "https://$basenet$dst:7000" "https://$basenet$src" "https://$basenet$one" "https://$basenet$two"
 
 # 9. Measure load and traffic
 sshrootbg $nodesrc		"measureLoad.sh 1 loadlocal.txt; measureTraffic.sh 1 trafficin.txt $ip_if in"
@@ -148,9 +148,9 @@ sshroot $nodedst "cpull_image_dest.sh https://$basenet$src trafficgen:${appversi
 	docker run -d -v /etc/timezone:/etc/timezone:ro -v /etc/localtime:/etc/localtime:ro -p 8080:8080 --name trafficgen $basenet$dst/trafficgen:${appversion}d;"
 aftermigr=$(date +%s%N)
 
-sshrootbg $nodeclient "interactive_client.sh $respSize $prTimeFile | docker run -v /etc/timezone:/etc/timezone:ro -v /etc/localtime:/etc/localtime:ro -i --rm -v \"\$(pwd)/logs2\":/logs \
+sshrootbg $nodeclient "(interactive_client.sh $respSize $prTimeFile | docker run -v /etc/timezone:/etc/timezone:ro -v /etc/localtime:/etc/localtime:ro -i --rm -v \"\$(pwd)/logs2\":/logs \
 	--name tgenclintdst trafficgencl:1.0 \
-	java -jar trafficgencl.jar interactive http://$basenet$dst:8080/trafficgen/interactive &;
+	java -jar trafficgencl.jar interactive http://$basenet$dst:8080/trafficgen/interactive &);
 	docker container rm -f tgenclint;"
 # ################################################################
 

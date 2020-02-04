@@ -78,8 +78,8 @@ sshroot $nodedst "docker rm -f \$(docker ps -qa) 2>/dev/null;
 
 # 6.1 Clean client
 sshroot $nodeclient "docker rm -f \$(docker ps -qa) 2>/dev/null;
-	mkdir -p logs;  for f in logs/*.log; do > \$f; done;
-	mkdir -p logs2; for f in logs2/*.log; do > \$f; done;"
+	mkdir -p logs;  for f in logs/*.log; do  [ -f \$f ] && { > \$f; }; done;
+	mkdir -p logs2; for f in logs2/*.log; do [ -f \$f ] && { > \$f; }; done;"
 
 # 7. Build container image and distribute layers (push)
 echo "Build container image and distribute layers"
