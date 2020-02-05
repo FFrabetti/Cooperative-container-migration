@@ -101,16 +101,12 @@ echo "Build container image and distribute layers"
 cm_setup.sh trafficgen ${appversion}d "https://$basenet$dst:7000" "https://$basenet$src" "https://$basenet$one" "https://$basenet$two"
 
 # 9. Measure load and traffic
-sshrootbg $nodesrc		"measureLoad.sh 1 loadlocal.txt; measureTraffic.sh 1 trafficin.txt $ip_if in"
-sshrootbg $nodesrc 		"measureTraffic.sh 1 trafficout.txt $ip_if out"
-sshrootbg $nodedst		"measureLoad.sh 1 loadlocal.txt; measureTraffic.sh 1 trafficin.txt $ip_if in"
-sshrootbg $nodedst 		"measureTraffic.sh 1 trafficout.txt $ip_if out"
-sshrootbg $nodeclient	"measureLoad.sh 1 loadlocal.txt; measureTraffic.sh 1 trafficin.txt $ip_if in"
-sshrootbg $nodeclient 	"measureTraffic.sh 1 trafficout.txt $ip_if out"
-sshrootbg $nodeone		"measureLoad.sh 1 loadlocal.txt; measureTraffic.sh 1 trafficin.txt $ip_if in"
-sshrootbg $nodeone 		"measureTraffic.sh 1 trafficout.txt $ip_if out"
-sshrootbg $nodetwo		"measureLoad.sh 1 loadlocal.txt; measureTraffic.sh 1 trafficin.txt $ip_if in"
-sshrootbg $nodetwo 		"measureTraffic.sh 1 trafficout.txt $ip_if out"
+sshrootbg $nodesrc		"measureLoad.sh 1 loadlocal.txt; measureIfTraffic.sh 1 traffic.txt $ip_if"
+sshrootbg $nodedst		"measureLoad.sh 1 loadlocal.txt; measureIfTraffic.sh 1 traffic.txt $ip_if"
+sshrootbg $nodeclient	"measureLoad.sh 1 loadlocal.txt; measureIfTraffic.sh 1 traffic.txt $ip_if"
+
+sshrootbg $nodeone		"measureLoad.sh 1 loadlocal.txt; measureIfTraffic.sh 1 traffic.txt $ip_if"
+sshrootbg $nodetwo		"measureLoad.sh 1 loadlocal.txt; measureIfTraffic.sh 1 traffic.txt $ip_if"
 
 echo "Sleep for a few seconds, collecting baseline traffic/load..."
 sleep 10
@@ -176,22 +172,18 @@ cp *.log bandwidth_*.txt "$EXPDIR/" 	# (bandwidth_*.txt from measure_bw.sh)
 # these just have a packet count
 # scp root@$nodesrc:trafficin.txt "$EXPDIR/trafficin_src.txt"
 # scp root@$nodesrc:trafficout.txt "$EXPDIR/trafficout_src.txt"
-scp root@$nodesrc:tcpdump_in "$EXPDIR/trafficin_src.txt"
-scp root@$nodesrc:tcpdump_out "$EXPDIR/trafficout_src.txt"
+#scp root@$nodesrc:tcpdump_in "$EXPDIR/trafficin_src.txt"
+#scp root@$nodesrc:tcpdump_out "$EXPDIR/trafficout_src.txt"
+scp root@$nodesrc:traffic.txt "$EXPDIR/traffic_src.txt"
 scp root@$nodesrc:mpstat.txt "$EXPDIR/load_src.txt"
 
-scp root@$nodedst:tcpdump_in "$EXPDIR/trafficin_dst.txt"
-scp root@$nodedst:tcpdump_out "$EXPDIR/trafficout_dst.txt"
+scp root@$nodedst:traffic.txt "$EXPDIR/traffic_dst.txt"
 scp root@$nodedst:mpstat.txt "$EXPDIR/load_dst.txt"
 
-scp root@$nodeclient:tcpdump_in "$EXPDIR/trafficin_cli.txt"
-scp root@$nodeclient:tcpdump_out "$EXPDIR/trafficout_cli.txt"
+scp root@$nodeclient:traffic.txt "$EXPDIR/traffic_cli.txt"
 scp root@$nodeclient:mpstat.txt "$EXPDIR/load_cli.txt"
 
-scp root@$nodeone:tcpdump_in "$EXPDIR/trafficin_n1.txt"
-scp root@$nodeone:tcpdump_out "$EXPDIR/trafficout_n1.txt"
+scp root@$nodeone:traffic.txt "$EXPDIR/traffic_n1.txt"
 scp root@$nodeone:mpstat.txt "$EXPDIR/load_n1.txt"
-
-scp root@$nodetwo:tcpdump_in "$EXPDIR/trafficin_n2.txt"
-scp root@$nodetwo:tcpdump_out "$EXPDIR/trafficout_n2.txt"
+scp root@$nodetwo:traffic.txt "$EXPDIR/traffic_n2.txt"
 scp root@$nodetwo:mpstat.txt "$EXPDIR/load_n2.txt"

@@ -23,9 +23,9 @@
 # trafficgen dummy application
 # 	Response size:
 # 	- fixed to ...
-respsize=$((40 * 1024))
+respsize=$((4 * 1024))
 # 	Request rate:
-# 	- 0.5 min delay between requests
+# 	- min delay between requests (see interactive_client.sh)
 
 prTimeFile="pr_sequence"
 # len minrange maxrange
@@ -38,10 +38,13 @@ cp Cooperative-container-migration/experiments/args/* args/
 
 
 # -------- Distribute updated setup.sh --------
-for n in node1-{1..4}; do
+for n in node1-{1..8}; do
+(
 	scp Cooperative-container-migration/experiments/utils/setup.sh root@$n:setup.sh
 	ssh root@$n "./setup.sh"
+) & &>/dev/null
 done
+wait
 
 
 # bash tm.sh (channelparams | '0') loadparams loadtimeout layersize appversion respsize

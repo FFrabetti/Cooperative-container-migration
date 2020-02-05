@@ -14,19 +14,20 @@ function testbw {
 	fi
 
 	ssh -f root@$node "(
-		lsof -ti tcp:5201 || iperf3 -s &
+		lsof -ti tcp:5201 || (iperf3 -s &);
 
-		[ $timeout -eq 0 ] || { sleep $timeout
-		#ps -aux | grep iperf > wokenup
+		[ $timeout -eq 0 ] || { sleep $timeout;
 		lsof -ti tcp:5201 | xargs -r kill -kill; }
 	) &" &>/dev/null
 
 	echo "end of server part" >&2
 
 	sleep 2
-	ssh root@$src "date +%s%N; iperf3 -c $srv $rev &
-					sleep 20
-					ps -C iperf3 -o pid= | xargs -r kill -kill"
+	ssh root@$src "date +%s%N;
+		(iperf3 -c $srv $rev &);
+		(sleep 20 &);
+		wait -n;
+		ps -C iperf3 -o pid= | xargs -r kill -kill"
 }
 
 echo "$0: $nodeclient - $nodesrc"
