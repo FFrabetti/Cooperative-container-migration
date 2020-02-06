@@ -36,10 +36,10 @@ for mps in $(ls load_*); do
 done
 
 
-cp logs/trafficgencl.log trafficgencl_before.log
-cp logs2/trafficgencl.log trafficgencl_after.log
+cp logs/trafficgencl.log before_trafficgencl.log
+cp logs2/trafficgencl.log after_trafficgencl.log
 
-for clientlog in "trafficgencl_before.log" "trafficgencl_after.log"; do
+for clientlog in "before_trafficgencl.log" "after_trafficgencl.log"; do
 	if [ -f $clientlog ]; then
 		# $(date "+%d %m %Y")
 		cat $clientlog | getInteractiveCli | getAverageOverS > "pr.$clientlog"
