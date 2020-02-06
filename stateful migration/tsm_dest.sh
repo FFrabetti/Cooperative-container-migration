@@ -3,16 +3,16 @@
 
 # $1 := <SOURCE>
 # $2 := <CONTAINER>
-# $3 := [<REGISTRY_TAG>]
+# $3 := [<CONTAINER_OPT>]
 
 if [ $# -ne 2 ] && [ $# -ne 3 ]; then
-	echo "Usage: $0 SOURCE CONTAINER [REGISTRY_TAG]"
+	echo "Usage: $0 SOURCE CONTAINER [CONTAINER_OPT]"
 	exit 1
 fi
 
 SOURCE=$1
 CONTAINER=$2
-REGISTRY_TAG=$3 	# if not given, try to use $SOURCE/$IMAGE
+CONTAINER_OPT="$3"
 
 
 # -------------------------------- FUNCTIONS --------------------------------
@@ -126,26 +126,22 @@ echoDebug "Directory changed to: $(pwd)"
 # given a container, find out which image it is using
 read IMAGE_FULL IMAGE IMAGE_REPO IMAGE_TAG IMAGE_REG < <(getContainerImage $SOURCE $CONTAINER)
 
-if [ $# -lt 3 ]; then
-	REGISTRY_TAG="$SOURCE/$IMAGE"
-fi
+REGISTRY_TAG="$SOURCE/$IMAGE"
 
 
 # 2.1 transfer container image
 # docker pull $REGISTRY_TAG || error_exit "container image not found $REGISTRY_TAG"
 # push to local registry (for distributed version only)
-if [ $# -lt 3 ]; then
-	for ip in $(hostname -I); do
-		if curl_test_ok "https://$ip/v2/"; then
-			LOCAL_REGISTRY=$ip
-			# docker tag $REGISTRY_TAG "$LOCAL_REGISTRY/$IMAGE"
-			# docker push "$LOCAL_REGISTRY/$IMAGE"
-			cpull_image_dest.sh https://$SOURCE $IMAGE https://$SOURCE https://$LOCAL_REGISTRY
-			REGISTRY_TAG="$LOCAL_REGISTRY/$IMAGE"
-			break
-		fi
-	done
-fi
+for ip in $(hostname -I); do
+	if curl_test_ok "https://$ip/v2/"; then
+		LOCAL_REGISTRY=$ip
+		# docker tag $REGISTRY_TAG "$LOCAL_REGISTRY/$IMAGE"
+		# docker push "$LOCAL_REGISTRY/$IMAGE"
+		cpull_image_dest.sh https://$SOURCE $IMAGE https://$SOURCE https://$LOCAL_REGISTRY
+		REGISTRY_TAG="$LOCAL_REGISTRY/$IMAGE"
+		break
+	fi
+done
 
 # 2.2 transfer volumes
 # get volumes list
@@ -243,7 +239,7 @@ scp $SOURCE:"$REMOTE_CHECKPT_DIR/$CONTAINER.$CHECKPOINT.tar" ./ || error_exit "s
 tar xf "$CONTAINER.$CHECKPOINT.tar" -C "$CHECKPT_DIR"
 
 
-TARGET_CONTAINER=$(docker create \
+TARGET_CONTAINER=$(docker create $CONTAINER_OPT \
 	--volumes-from $UCONT_ID \
 	--volumes-from $UCONT_ID_RO:ro \
 	$REGISTRY_TAG) 	# use pulled image

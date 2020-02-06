@@ -7,9 +7,10 @@
 # $4 := <MASTER_REGISTRY>
 # $5 := <REDIS_HOST>
 # $6 := <LOCAL_REGISTRY>
+# $7 := [<CONTAINER_OPT>]
 
-if [ $# -ne 6 ]; then
-	echo "Usage: $0 SOURCE CONTAINER USER_ID REGISTRY REDIS_HOST LOCAL_REGISTRY"
+if [ $# -ne 6 ] && [ $# -ne 7 ]; then
+	echo "Usage: $0 SOURCE CONTAINER USER_ID REGISTRY REDIS_HOST LOCAL_REGISTRY [CONTAINER_OPT]"
 	exit 1
 fi
 
@@ -19,6 +20,7 @@ USER_ID=$3
 REGISTRY=$4
 REDIS_HOST=$5
 LOCAL_REGISTRY=$6
+CONTAINER_OPT="$7"
 
 # -------------------------------- FUNCTIONS --------------------------------
 source $(dirname "$0")/redis-functions.sh
@@ -268,7 +270,7 @@ echoDebug "Sync remote $REMOTE_CHECKPT_DIR/$CHECKPOINT content with local $CHECK
 rsyncFrom $SOURCE "$REMOTE_CHECKPT_DIR/$CHECKPOINT/" "$CHECKPT_DIR" "-acz --delete" || error_exit "checkpoint rsync"
 
 
-TARGET_CONTAINER=$(docker create \
+TARGET_CONTAINER=$(docker create $CONTAINER_OPT \
 	--volumes-from $UCONT_ID \
 	--volumes-from $UCONT_ID_RO:ro \
 	"$LOCAL_REGISTRY/$IMAGE")
