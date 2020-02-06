@@ -105,11 +105,12 @@ DIR=$(dirname "$0")
 PATH="$PATH:$DIR"
 
 # ################ SECURITY ALERT ################
-# [ $EUID -eq 0 ] to check if root
-if [ -f "psw.insecure" ]; then
-	PASSWD=$(cat "psw.insecure")
-else
-	error_exit "psw.insecure required"
+if [ $EUID -ne 0 ]; then 	# to check if root
+	if [ -f "psw.insecure" ]; then
+		PASSWD=$(cat "psw.insecure")
+	else
+		error_exit "psw.insecure required"
+	fi
 fi
 # ################ SECURITY ALERT ################
 
@@ -130,8 +131,10 @@ REMOTE_SH_DIR="\$HOME/bin"							# search scripts in remote $HOME/bin
 REMOTE_VOL_BACKUPS="\$HOME/$CONTAINER/backup" 		# remote dir for volume backups
 REMOTE_CHECKPT_DIR="\$HOME/$CONTAINER/checkpoint"	# remote dir for checkpoint files
 
+mkdir -p "$VOL_ARCHIVES"
 [[ ! -d "$VOL_ARCHIVES" || ! -w "$VOL_ARCHIVES" ]] && error_exit "cannot write to $VOL_ARCHIVES"
 
+mkdir -p "$CHECKPT_ARCHIVES"
 [[ ! -d "$CHECKPT_ARCHIVES" || ! -w "$CHECKPT_ARCHIVES" ]] && error_exit "cannot write to $CHECKPT_ARCHIVES"
 
 # move to a unique working directory (for multiple migrations at the same time)
@@ -189,7 +192,7 @@ while read name destination rw labels options; do
 	fi
 done < "$VOL_LIST" | ssh $SOURCE "$REMOTE_SH_DIR/run_utilc_voltotar.sh $CONTAINER $REMOTE_VOL_BACKUPS"
 
-echo "Wait for volumes fetching..."
+echo "Wait for layers and volumes fetching..."
 wait
 
 echoDebug "Content of $VOL_BACKUPS: " $(for f in $(ls "$VOL_BACKUPS"); do wc -c "$VOL_BACKUPS/$f"; done)
@@ -252,10 +255,12 @@ echoDebug "Content of $(pwd): $(ls)"
 
 # leave running
 CHECKPOINT=$(date +%F_%H-%M-%S) 	# (e.g. 2020-01-06_08-09-15)
-ssh $SOURCE "docker checkpoint create $CONTAINER $CHECKPOINT --checkpoint-dir=\"$REMOTE_CHECKPT_DIR\" --leave-running"
+# ssh $SOURCE "docker checkpoint create $CONTAINER $CHECKPOINT --checkpoint-dir=\"$REMOTE_CHECKPT_DIR\" --leave-running"
 
 # ################ SECURITY ALERT ################
-echo "$PASSWD" | ssh -tt $SOURCE "sudo chown -R \$USER $REMOTE_CHECKPT_DIR"
+if [ $EUID -ne 0 ]; then
+	echo "$PASSWD"
+fi | ssh $SOURCE "$REMOTE_SH_DIR/checkpoint_create.sh $CONTAINER $CHECKPOINT $REMOTE_CHECKPT_DIR --leave-running"
 # ################ SECURITY ALERT ################
 
 echoDebug "Sync remote $REMOTE_CHECKPT_DIR/$CHECKPOINT content with local $CHECKPT_DIR"
@@ -273,10 +278,12 @@ echoDebug "Waiting a few seconds..." && sleep 5
 
 # 3. stop container and 4.1 send checkpoint difference
 CHECKPOINT_F="${CHECKPOINT}-final"
-ssh $SOURCE "docker checkpoint create $CONTAINER $CHECKPOINT_F --checkpoint-dir=\"$REMOTE_CHECKPT_DIR\""
+# ssh $SOURCE "docker checkpoint create $CONTAINER $CHECKPOINT_F --checkpoint-dir=\"$REMOTE_CHECKPT_DIR\""
 
 # ################ SECURITY ALERT ################
-echo "$PASSWD" | ssh -tt $SOURCE "sudo chown \$USER $REMOTE_CHECKPT_DIR/$CHECKPOINT_F"
+if [ $EUID -ne 0 ]; then
+	echo "$PASSWD"
+fi | ssh $SOURCE "$REMOTE_SH_DIR/checkpoint_create.sh $CONTAINER $CHECKPOINT_F $REMOTE_CHECKPT_DIR"
 # ################ SECURITY ALERT ################
 
 echoDebug "Sync remote $REMOTE_CHECKPT_DIR/$CHECKPOINT_F content with local $CHECKPT_DIR"
@@ -314,40 +321,40 @@ docker start --checkpoint=$CHECKPOINT_F $TARGET_CONTAINER && echo -e '\n\nSUCCES
 
 
 # -------------------------------- CLEAN UP --------------------------------
-echoDebug "Starting clean up operations..."
+# echoDebug "Starting clean up operations..."
 
-# sync local repo dir ($VOL_ARCHIVES) with all volume archives
-# we need to rename them first
-while read name dest rw labels rest; do
+# # sync local repo dir ($VOL_ARCHIVES) with all volume archives
+# # we need to rename them first
+# while read name dest rw labels rest; do
 
-	# TODO: update volumes registry
+	# # TODO: update volumes registry
 
-	archfile="$VOL_BACKUPS/$name.tar"
-	if [ -f "$archfile" ]; then
-		echoDebug "found file: $archfile"
-		if [ $rw = "true" ]; then
-			rw_guid=$(get_label_value "$RW_GUID_KEY" "$labels")
-			echoDebug "it is RW, with guid: $rw_guid"
-			if [ $rw_guid ]; then
-				mv "$archfile" "$VOL_BACKUPS/rw.${rw_guid}.tar"
-			else
-				echoDebug "No guid for $archfile"
-				rm "$archfile"
-			fi
-		else
-			ro_guid=$(b64url_encode "$IMAGE$dest")
-			echoDebug "it is RO, with guid: $ro_guid"
-			mv "$archfile" "$VOL_BACKUPS/ro.${ro_guid}.tar"
-		fi
-	fi
-done < "$VOL_LIST"
-rsync -acv "$VOL_BACKUPS/" "$VOL_ARCHIVES"
+	# archfile="$VOL_BACKUPS/$name.tar"
+	# if [ -f "$archfile" ]; then
+		# echoDebug "found file: $archfile"
+		# if [ $rw = "true" ]; then
+			# rw_guid=$(get_label_value "$RW_GUID_KEY" "$labels")
+			# echoDebug "it is RW, with guid: $rw_guid"
+			# if [ $rw_guid ]; then
+				# mv "$archfile" "$VOL_BACKUPS/rw.${rw_guid}.tar"
+			# else
+				# echoDebug "No guid for $archfile"
+				# rm "$archfile"
+			# fi
+		# else
+			# ro_guid=$(b64url_encode "$IMAGE$dest")
+			# echoDebug "it is RO, with guid: $ro_guid"
+			# mv "$archfile" "$VOL_BACKUPS/ro.${ro_guid}.tar"
+		# fi
+	# fi
+# done < "$VOL_LIST"
+# rsync -acv "$VOL_BACKUPS/" "$VOL_ARCHIVES"
 
-# TODO: $CHECKPT_ARCHIVES and checkpoints registry?
+# # TODO: $CHECKPT_ARCHIVES and checkpoints registry?
 
-if [ ! $DEBUG_MODE ]; then
-	cd ..
-	rm -rv $WORKDIR
-fi
+# if [ ! $DEBUG_MODE ]; then
+	# cd ..
+	# rm -rv $WORKDIR
+# fi
 
 # remove remote dir ???
