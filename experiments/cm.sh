@@ -24,7 +24,7 @@ loadparams=$2
 loadtimeout=$3
 layersize=$4
 appversion=$5
-respSize=$6
+respsize=$6
 
 TT="int"	 # traffic type
 EXPDIR="cm_sl_${TT}_$(date +%F_%H-%M-%S)"
@@ -97,8 +97,9 @@ echo "Build container image and distribute layers"
 } | sshroot $nodesrc "src_build_image.sh $appversion $layersize;
 	docker container rm -f trafficgen 2>/dev/null;
 	docker run -d -v /etc/timezone:/etc/timezone:ro -v /etc/localtime:/etc/localtime:ro -p 8080:8080 --name trafficgen trafficgen:${appversion}d;"
-				
-cm_setup.sh trafficgen ${appversion}d "https://$basenet$dst:7000" "https://$basenet$src" "https://$basenet$one" "https://$basenet$two"
+
+# update "master" registry with layer locations
+sshroot $nodedst "cm_setup.sh trafficgen ${appversion}d https://$basenet$dst:7000 https://$basenet$src https://$basenet$one https://$basenet$two"
 
 # 9. Measure load and traffic
 sshrootbg $nodesrc		"measureLoad.sh 1 loadlocal.txt; measureIfTraffic.sh 1 traffic.txt $ip_if"
@@ -130,7 +131,7 @@ cp $prTimeFile "$EXPDIR/"
 scp $prTimeFile root@$nodeclient:$prTimeFile
 
 # it runs forever, with 1s period, until the container is stopped or prTimeFile is deleted
-sshrootbg $nodeclient "interactive_client.sh $respSize $prTimeFile | docker run -v /etc/timezone:/etc/timezone:ro -v /etc/localtime:/etc/localtime:ro -i --rm -v \"\$(pwd)/logs\":/logs \
+sshrootbg $nodeclient "interactive_client.sh $respsize $prTimeFile | docker run -v /etc/timezone:/etc/timezone:ro -v /etc/localtime:/etc/localtime:ro -i --rm -v \"\$(pwd)/logs\":/logs \
 	--name tgenclint trafficgencl:1.0 \
 	java -jar trafficgencl.jar interactive http://$basenet$src:8080/trafficgen/interactive &"
 
@@ -144,7 +145,7 @@ sshroot $nodedst "cpull_image_dest.sh https://$basenet$src trafficgen:${appversi
 	docker run -d -v /etc/timezone:/etc/timezone:ro -v /etc/localtime:/etc/localtime:ro -p 8080:8080 --name trafficgen $basenet$dst/trafficgen:${appversion}d;"
 aftermigr=$(date +%s%N)
 
-sshrootbg $nodeclient "(interactive_client.sh $respSize $prTimeFile | docker run -v /etc/timezone:/etc/timezone:ro -v /etc/localtime:/etc/localtime:ro -i --rm -v \"\$(pwd)/logs2\":/logs \
+sshrootbg $nodeclient "(interactive_client.sh $respsize $prTimeFile | docker run -v /etc/timezone:/etc/timezone:ro -v /etc/localtime:/etc/localtime:ro -i --rm -v \"\$(pwd)/logs2\":/logs \
 	--name tgenclintdst trafficgencl:1.0 \
 	java -jar trafficgencl.jar interactive http://$basenet$dst:8080/trafficgen/interactive &);
 	docker container rm -f tgenclint;"
