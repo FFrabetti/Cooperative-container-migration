@@ -8,7 +8,7 @@ N1=$5
 N2=$6
 
 source registry-functions.sh
-UPDATE_MNF_PY="update_manifest.py"
+UPDATE_MNF_PY=$(which "update_manifest.py")
 
 
 getManifest $MASTER $REPO $VERS > manifest
