@@ -90,7 +90,8 @@ echo "Build container image and distribute layers"
 	echo "$basenet$src ${appversion}d"
 	echo "$basenet$dst $appversion"
 } | sshroot $nodesrc "src_build_image.sh $appversion $layersize;
-
+	
+	[ -d trafficgen ] && rm -rf trafficgen;
 	src_fill_volumes.sh $volumesize v1_${volumesize} v2_${volumesize} v3_${volumesize};
 	docker pull ubuntu;
 	
@@ -151,8 +152,9 @@ sshrootbg $nodeclient "(interactive_client.sh \"$respsize 100 100\" $prTimeFile 
 
 
 echo "Sleep for a few seconds, collecting post-migration measurements..."
-sleep 30 	# for tcpdump weird buffered behavior...
-sshroot $nodedst "docker exec -it trafficgen /bin/sh -c 'ls /usr/local/tomcat/myvol'"
+sleep 30
+echo "Files in trafficgen@/usr/local/tomcat/myvol:"
+sshroot $nodedst "docker exec trafficgen /bin/sh -c 'ls -l /usr/local/tomcat/myvol | wc -l'"
 
 # 11. Data collection
 echo "$beforemigr $aftermigr" > "$EXPDIR/migr_time"

@@ -3,8 +3,9 @@
 VERS=$1
 DIM=$2
 
-tar -xf Cooperative-container-migration/executable/trafficgen.tar
-cd trafficgen
+[ -d docker_build ] && rm -rf docker_build
+tar -xf Cooperative-container-migration/executable/trafficgen.tar -C docker_build
+cd docker_build/trafficgen
 docker build -t trafficgen:$VERS .
 
 

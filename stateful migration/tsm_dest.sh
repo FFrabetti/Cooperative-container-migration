@@ -137,7 +137,8 @@ for ip in $(hostname -I); do
 		LOCAL_REGISTRY=$ip
 		# docker tag $REGISTRY_TAG "$LOCAL_REGISTRY/$IMAGE"
 		# docker push "$LOCAL_REGISTRY/$IMAGE"
-		cpull_image_dest.sh https://$SOURCE $IMAGE https://$SOURCE https://$LOCAL_REGISTRY
+		echo "Pulling image $IMAGE from $SOURCE (push to $LOCAL_REGISTRY)"
+		cpull_image_dest.sh "https://$SOURCE" "$IMAGE" "https://$SOURCE" "https://$LOCAL_REGISTRY"
 		REGISTRY_TAG="$LOCAL_REGISTRY/$IMAGE"
 		break
 	fi
@@ -285,7 +286,7 @@ docker run \
 	--volumes-from $UCONT_ID \
 	-v "$(pwd)/$VOL_BACKUPS":/backup \
 	-v "$TAR_TO_VOL":/tar_to_vol.sh \
-	ubuntu /tar_to_vol.sh $CHANGED_VOLS
+	ubuntu /tar_to_vol.sh $CHANGED_VOLS 	# names of the tar archives 
 
 # 5. start target container from checkpoint
 docker start --checkpoint=$CHECKPOINT_F $TARGET_CONTAINER && echo -e '\n\nSUCCESS!\nStarted container:' "$TARGET_CONTAINER"

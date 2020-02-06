@@ -12,6 +12,10 @@ if [ "$1" == "ALL" ]; then 	# extract all tars
 else
 	while (($#)); do
 		tarfile="/backup/$1.tar"
+		if [ ! -f "$tarfile" ]; then
+			tarfile="/backup/$1"
+		fi
+		
 		# if file "$tarfile" | grep -q 'tar archive'; then 	# just for uncompressed tars
 		if [ -f "$tarfile" ]; then
 			tar -xvf "$tarfile" -C /
