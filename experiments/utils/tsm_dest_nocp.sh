@@ -231,8 +231,7 @@ while read name destination rw rest; do
 done < "$VOL_LIST" | ssh $SOURCE "$REMOTE_SH_DIR/run_utilc_voltotar.sh $CONTAINER $REMOTE_VOL_BACKUPS"
 CHANGED_VOLS=$(rsyncFrom $SOURCE "$REMOTE_VOL_BACKUPS/" "$VOL_BACKUPS" "-acz --out-format=%n")
 
-# debug
-echoDebug "Writable volumes changed: $CHANGED_VOLS"
+echo "Writable volumes changed: $CHANGED_VOLS"
 
 # wait for termination
 docker container wait $UCONT_ID $UCONT_ID_RO

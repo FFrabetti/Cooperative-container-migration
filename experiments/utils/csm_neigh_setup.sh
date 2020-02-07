@@ -19,6 +19,9 @@ DIR=$(mktemp -d)
 	# ubuntu /bin/bash -c 'echo "Read-only content" > /testro/testfile; tar cPf /outtar/testro.tar /testro'
 # mv -f $DIR/testro.tar "$VOL_ARCHIVES/ro.${RO_GUID}.tar"
 
+# extract numbers within a string (to be used instead of filleri)
+# echo $vguid | awk '{ print gensub(/([^0-9]*)/, "", "g", $1) }'
+
 get_filler_file.sh $fillersize $filleri | docker run --rm -i \
 	-v $DIR:/outtar -v /testrw \
 	ubuntu /bin/bash -c 'tee /testrw/testfile >/dev/null; tar cPf /outtar/testrw.tar /testrw'

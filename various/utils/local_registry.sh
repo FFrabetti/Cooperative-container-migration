@@ -9,7 +9,7 @@
 
 # ################ START/STOP LOCAL REGISTRY ################
 if [ $# -eq 0 ]; then
-	docker container rm -f registry
+	docker container rm -f registry 2>/dev/null
 	docker run -d \
 		-p 5000:5000 \
 		-v "$(pwd)/registry":/var/lib/registry \
@@ -29,7 +29,7 @@ else
 			PORT=$2
 		fi
 	
-		docker container rm -f $CNAME
+		docker container rm -f $CNAME 2>/dev/null
 		docker run -d \
 			-p $PORT:443 \
 			-v "$CERTS":/certs \
@@ -42,7 +42,7 @@ else
 	else
 		# instead of using -e arguments, you can specify an alternate YAML configuration file by mounting it as a volume in the container
 		echo "... using $CONFIG_FILE configuration file ..."
-		docker container rm -f sec_registry
+		docker container rm -f sec_registry 2>/dev/null
 		docker run -d \
 			-p 443:443 \
 			-v "$CERTS":/certs \

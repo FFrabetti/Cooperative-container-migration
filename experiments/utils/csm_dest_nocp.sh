@@ -238,6 +238,8 @@ UCONT_ID_RO=$(docker run -d \
 	$MOUNTSTR_RO ubuntu /tar_to_vol.sh ${VOLNAMES_RO[@]})
 
 
+echo "Create target container: $CONTAINER_OPT"
+
 TARGET_CONTAINER=$(docker create $CONTAINER_OPT \
 	--volumes-from $UCONT_ID \
 	--volumes-from $UCONT_ID_RO:ro \
@@ -254,8 +256,7 @@ while read name destination rw rest; do
 done < "$VOL_LIST" | ssh $SOURCE "$REMOTE_SH_DIR/run_utilc_voltotar.sh $CONTAINER $REMOTE_VOL_BACKUPS"
 CHANGED_VOLS=$(rsyncFrom $SOURCE "$REMOTE_VOL_BACKUPS/" "$VOL_BACKUPS" "-acz --out-format=%n")
 
-# debug
-echoDebug "Writable volumes changed: $CHANGED_VOLS"
+echo "Writable volumes changed: $CHANGED_VOLS"
 
 # wait for termination
 docker container wait $UCONT_ID $UCONT_ID_RO
@@ -269,7 +270,7 @@ docker run \
 	--volumes-from $UCONT_ID \
 	-v "$(pwd)/$VOL_BACKUPS":/backup \
 	-v "$TAR_TO_VOL":/tar_to_vol.sh \
-	ubuntu /tar_to_vol.sh $CHANGED_VOLS
+	ubuntu /tar_to_vol.sh $CHANGED_VOLS 	# names of the tar archives 
 
 # 5. start target container from checkpoint
 docker start $TARGET_CONTAINER && echo -e '\n\nSUCCESS!\nStarted container:' "$TARGET_CONTAINER"

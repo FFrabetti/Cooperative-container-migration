@@ -12,7 +12,8 @@ filename="filler$INDEX"
 
 # create filler files if not present
 if [ ! -f $filename ]; then
-	awk 'BEGIN { for(i=0; i<1024; i++) printf("%c", '$DEC') }' > $filename
+#	awk 'BEGIN { for(i=0; i<1024; i++) printf("%c", '$DEC') }' > $filename
+	awk 'BEGIN { srand('$DEC'); for(i=0; i<1024; i++) printf("%c", int(rand()*1000) % 95 + 32) }' > $filename
 fi
 
 if [[ $SIZE =~ ([0-9]+)M ]]; then
