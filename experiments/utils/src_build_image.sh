@@ -23,6 +23,7 @@ fi
 # https://github.com/moby/moby/blob/10c0af083544460a2ddc2218f37dc24a077f7d90/docs/reference/commandline/images.md#filtering
 filter="reference=trafficgen:$TAG"
 if [ ! "$(docker image ls -q --filter $filter)" ]; then
+	echo "Build trafficgen image for $TAG $SIZE"
 	build_trafficgen.sh $TAG $SIZE
 fi
 

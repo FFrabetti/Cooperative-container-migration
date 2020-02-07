@@ -29,8 +29,13 @@ if [[ $SIZE =~ ([0-9]+)M ]]; then
 	filename=$mfile
 fi
 
+echo "filler file $filename $SIZE times" >&2
+count=0
 
 # now SIZE and filename are independent of KB or MB
-for j in {1..$SIZE}; do
+for j in $(seq 1 $SIZE); do
 	cat $filename
+	count=$((count+1))
 done
+
+echo "count = $count (it should be $SIZE)" >&2
