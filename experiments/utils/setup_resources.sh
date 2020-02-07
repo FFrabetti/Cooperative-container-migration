@@ -4,6 +4,8 @@ source config.sh || { echo "config.sh not found"; exit 1; }
 
 echo "Setting up the nodes"
 
+cmdargs="$@"
+
 while (( $# )); do
 	node=$(getNode $1)
 	ip=$(getIp $1)
@@ -17,3 +19,13 @@ while (( $# )); do
 done
 
 wait
+
+for n in $cmdargs; do
+nodeip=$(getNode $n)
+sshroot $nodeip "for ip in $src $dst $client $one $two; do
+	mkdir -p \$HOME/.ssh;
+	if [ -z \"\$(ssh-keygen -F $basenet\$ip)\" ]; then
+		ssh-keyscan -H $basenet\$ip >> \$HOME/.ssh/known_hosts;
+	fi;
+done"
+done
