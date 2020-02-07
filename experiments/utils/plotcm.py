@@ -8,6 +8,12 @@ def plotter(dirname):
 	datapath=os.path.join(dirname, 'results.csv')
 	resultpath = os.path.join(dirname, 'results')
 
+	infile = open(migrpath, 'r')
+	migrline = infile.readline().strip()
+	mig_ts = []
+	for mtime in migrline.split():
+		mig_ts.append((int(mtime[:10])))
+
 	with open(datapath) as csvfile:
 		timestamp_all = []
 		load_cli = []
@@ -30,24 +36,25 @@ def plotter(dirname):
 		csvreader = csv.reader(csvfile, delimiter=',', quotechar='|')
 		first_row = next(csvreader)
 		for row in csvreader:
-			timestamp_all.append(row[0])
-			load_cli.append(round((100-float(row[1]))/100,2))
-			load_dst.append(round((100-float(row[2]))/100,2))
-			load_n1.append(round((100-float(row[3]))/100,2))
-			load_n2.append(round((100-float(row[4]))/100,2))
-			load_src.append(round((100-float(row[5]))/100,2))
-			trafficin_cli.append(round(float(row[6]),2))
-			trafficout_cli.append(round(float(row[7]),2))
-			trafficin_dst.append(round(float(row[8]),2))
-			trafficout_dst.append(round(float(row[9]),2))
-			latency_after.append(round(float(row[10]),2))
-			latency_before.append(round(float(row[11]),2))
-			trafficin_n1.append(round(float(row[12]),2))
-			trafficout_n1.append(round(float(row[13]),2))
-			trafficin_n2.append(round(float(row[14]),2))
-			trafficout_n2.append(round(float(row[15]),2))
-			trafficin_src.append(round(float(row[16]),2))
-			trafficout_src.append(round(float(row[17]),2))
+			if ( (mig_ts[0]-15) <= int(row[0]) <= (mig_ts[1]+15) ):
+				timestamp_all.append(row[0])
+				load_cli.append(round((100-float(row[1]))/100,2))
+				load_dst.append(round((100-float(row[2]))/100,2))
+				load_n1.append(round((100-float(row[3]))/100,2))
+				load_n2.append(round((100-float(row[4]))/100,2))
+				load_src.append(round((100-float(row[5]))/100,2))
+				trafficin_cli.append(round(float(row[6]),2))
+				trafficout_cli.append(round(float(row[7]),2))
+				trafficin_dst.append(round(float(row[8]),2))
+				trafficout_dst.append(round(float(row[9]),2))
+				latency_after.append(round(float(row[10]),2))
+				latency_before.append(round(float(row[11]),2))
+				trafficin_n1.append(round(float(row[12]),2))
+				trafficout_n1.append(round(float(row[13]),2))
+				trafficin_n2.append(round(float(row[14]),2))
+				trafficout_n2.append(round(float(row[15]),2))
+				trafficin_src.append(round(float(row[16]),2))
+				trafficout_src.append(round(float(row[17]),2))
 	csvfile.close()
 
 	try:
