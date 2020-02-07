@@ -114,6 +114,7 @@ echo "Build container image and distribute layers"
 # update "master" registry with layer locations
 sshroot $nodedst "cm_setup.sh trafficgen ${appversion}d https://$basenet$dst:7000 https://$basenet$src https://$basenet$one https://$basenet$two;
 
+	apt-get -y install redis-tools;
 	docker container rm -f myredis 2>/dev/null;
 	docker run -d -p 6379:6379 --name myredis redis;"
 
@@ -128,8 +129,8 @@ fi
 oldvsize=$((num * (100-changevol)/100))
 echo "Using old cached volume size: $oldvsize KB"
 
-sshroot $nodeone "csm_neigh_setup.sh $basenet$dst v2_${volumesize}_guid $oldvsize 2 100;"
-sshroot $nodetwo "csm_neigh_setup.sh $basenet$dst v3_${volumesize}_guid $oldvsize 3 100;"
+sshroot $nodeone "apt-get -y install redis-tools; csm_neigh_setup.sh $basenet$dst $basenet$one v2_${volumesize}_guid $oldvsize 2 100;"
+sshroot $nodetwo "apt-get -y install redis-tools; csm_neigh_setup.sh $basenet$dst $basenet$two v3_${volumesize}_guid $oldvsize 3 100;"
 
 # 9. Measure load and traffic
 sshrootbg $nodesrc		"measureLoad.sh 1 loadlocal.txt; measureIfTraffic.sh 1 traffic.txt $ip_if"

@@ -1,10 +1,11 @@
 #!/bin/bash
 
 master=$1
-vguid=$2
-fillersize=$3 	# volumesize - changevol
-filleri=$4
-vrank=$5
+localip=$2
+vguid=$3
+fillersize=$4 	# volumesize - changevol
+filleri=$5
+vrank=$6
 
 
 source redis-functions.sh
@@ -23,5 +24,5 @@ get_filler_file.sh $fillersize $filleri | docker run --rm -i \
 	ubuntu /bin/bash -c 'tee /testrw/testfile >/dev/null; tar cPf /outtar/testrw.tar /testrw'
 mv -f $DIR/testrw.tar "$VOL_ARCHIVES/rw.${vguid}.tar"
 
-echo -n "Add to rw:$vguid value $master ($vrank): "
-updateVolRegistry "rw:$vguid" $master $vrank
+echo -n "Add to rw:$vguid value $localip ($vrank): "
+updateVolRegistry $master "rw:$vguid" $localip $vrank
