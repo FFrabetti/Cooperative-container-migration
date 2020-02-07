@@ -239,11 +239,12 @@ UCONT_ID_RO=$(docker run -d \
 
 
 echo "Create target container: $CONTAINER_OPT"
-
-echo "docker create $CONTAINER_OPT \
-	--volumes-from $UCONT_ID \
-	--volumes-from $UCONT_ID_RO:ro \
-	\"$LOCAL_REGISTRY/$IMAGE\" "
+	
+# remove https:// if present
+if [[ $LOCAL_REGISTRY =~ ^[^0-9]+(.+) ]]; then
+	LOCAL_REGISTRY=${BASH_REMATCH[1]}
+fi
+# echo "docker create $CONTAINER_OPT --volumes-from $UCONT_ID --volumes-from $UCONT_ID_RO:ro \"$LOCAL_REGISTRY/$IMAGE\""
 
 TARGET_CONTAINER=$(docker create $CONTAINER_OPT \
 	--volumes-from $UCONT_ID \
