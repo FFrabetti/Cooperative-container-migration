@@ -47,8 +47,10 @@ function processIfstat { # $1 filein $2 fileout
 	read header1
 	read header2
 	while read hour int outt; do
-		echo $(dateToTimestamp "$date $hour") $int >> $1
-		echo $(dateToTimestamp "$date $hour") $outt >> $2
+		if [[ "$hour" =~ ^[0-9] ]]; then
+			echo $(dateToTimestamp "$date $hour") $int >> $1
+			echo $(dateToTimestamp "$date $hour") $outt >> $2
+		fi
 	done
 }
 

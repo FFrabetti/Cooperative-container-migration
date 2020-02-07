@@ -21,11 +21,11 @@ done
 wait
 
 for n in $cmdargs; do
-nodeip=$(getNode $n)
-sshroot $nodeip "for ip in $src $dst $client $one $two; do
-	mkdir -p \$HOME/.ssh;
-	if [ -z \"\$(ssh-keygen -F $basenet\$ip)\" ]; then
-		ssh-keyscan -H $basenet\$ip >> \$HOME/.ssh/known_hosts;
-	fi;
-done"
+	nodeip=$(getNode $n)
+	sshroot $nodeip "for ip in $src $dst $client $one $two; do
+		mkdir -p \$HOME/.ssh;
+		if [ -z \"\$(ssh-keygen -F $basenet\$ip)\" ]; then
+			ssh-keyscan -H $basenet\$ip >> \$HOME/.ssh/known_hosts;
+		fi;
+	done"
 done

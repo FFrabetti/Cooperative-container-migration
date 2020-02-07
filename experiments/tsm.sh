@@ -141,7 +141,7 @@ sleep 10
 
 # ################################################################
 beforemigr=$(date +%s%N)
-sshroot $nodedst "tsm_dest.sh $basenet$src trafficgen '-v /etc/timezone:/etc/timezone:ro -v /etc/localtime:/etc/localtime:ro -p 8080:8080 --name trafficgen';"
+sshroot $nodedst "tsm_dest_nocp.sh $basenet$src trafficgen '-v /etc/timezone:/etc/timezone:ro -v /etc/localtime:/etc/localtime:ro -p 8080:8080 --name trafficgen';"
 aftermigr=$(date +%s%N)
 
 sshrootbg $nodeclient "(interactive_client.sh \"$respsize 100 100\" $prTimeFile | docker run -v /etc/timezone:/etc/timezone:ro -v /etc/localtime:/etc/localtime:ro -i --rm -v \"\$(pwd)/logs2\":/logs \

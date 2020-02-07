@@ -3,7 +3,10 @@
 VERS=$1
 DIM=$2
 
+currdir=$(pwd)
+
 [ -d docker_build ] && rm -rf docker_build
+mkdir -p docker_build
 tar -xf Cooperative-container-migration/executable/trafficgen.tar -C docker_build
 cd docker_build/trafficgen
 docker build -t trafficgen:$VERS .
@@ -25,3 +28,6 @@ get_filler_file.sh $DIM 3 | docker run --name "${VERS}d" -i trafficgen:${VERS}c 
 
 docker commit --change='CMD ["catalina.sh", "run"]' ${VERS}d trafficgen:${VERS}d
 docker container rm -f ${VERS}d
+
+
+cd $currdir
