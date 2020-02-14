@@ -4,6 +4,14 @@ import sys
 import time
 import matplotlib.pyplot as plt
 
+def getIndex(arr, str):
+	i = 0
+	for a in arr:
+		if a.find(str) >= 0:
+			return i
+		i+=1
+	return -1
+
 def plotter(dirname):
 	datapath = os.path.join(dirname, 'results.csv')
 	resultpath = os.path.join(dirname, 'results')
@@ -33,20 +41,33 @@ def plotter(dirname):
 		trafficout_src = []
 		csvreader = csv.reader(csvfile, delimiter=',', quotechar='|')
 		first_row = next(csvreader)
+		
+		load_cli_i = getIndex(first_row, 'load_cli')
+		load_dst_i = getIndex(first_row, 'load_dst')
+		load_src_i = getIndex(first_row, 'load_src')
+		tin_cli_i = getIndex(first_row, 'traffic_cli.txt_in')
+		tin_dst_i = getIndex(first_row, 'traffic_dst.txt_in')
+		tin_src_i = getIndex(first_row, 'traffic_src.txt_in')
+		tout_cli_i = getIndex(first_row, 'traffic_cli.txt_out')
+		tout_dst_i = getIndex(first_row, 'traffic_dst.txt_out')
+		tout_src_i = getIndex(first_row, 'traffic_src.txt_out')
+		lafter_i = getIndex(first_row, 'after_trafficgencl')
+		lbefore_i = getIndex(first_row, 'before_trafficgencl')
+				
 		for row in csvreader:
 			if ( (mig_ts[0]-15) <= int(row[0]) <= (mig_ts[1]+15) ):
 				timestamp_all.append(row[0])
-				load_cli.append(round((100-float(row[1]))/100,2))
-				load_dst.append(round((100-float(row[2]))/100,2))
-				load_src.append(round((100-float(row[3]))/100,2))
-				trafficin_cli.append(round(float(row[4]),2))
-				trafficout_cli.append(round(float(row[5]),2))
-				trafficin_dst.append(round(float(row[6]),2))
-				trafficout_dst.append(round(float(row[7]),2))
-				latency_after.append(round(float(row[8]),2))
-				latency_before.append(round(float(row[9]),2))
-				trafficin_src.append(round(float(row[10]),2))
-				trafficout_src.append(round(float(row[11]),2))
+				load_cli.append(round((100-float(row[load_cli_i]))/100,2))
+				load_dst.append(round((100-float(row[load_dst_i]))/100,2))
+				load_src.append(round((100-float(row[load_src_i]))/100,2))
+				trafficin_cli.append(round(float(row[tin_cli_i]),2))
+				trafficout_cli.append(round(float(row[tout_cli_i]),2))
+				trafficin_dst.append(round(float(row[tin_dst_i]),2))
+				trafficout_dst.append(round(float(row[tout_dst_i]),2))
+				latency_after.append(round(float(row[lafter_i]),2))
+				latency_before.append(round(float(row[lbefore_i]),2))
+				trafficin_src.append(round(float(row[tin_src_i]),2))
+				trafficout_src.append(round(float(row[tout_src_i]),2))
 	csvfile.close()
 
 	try:
@@ -82,7 +103,7 @@ def plotter(dirname):
 	plt.plot(trafficin_src)
 	plt.legend(["Client", "Destination", "Source"])
 	plt.xlabel("Time Tick")
-	plt.ylabel("Packet Traffic (Bytes/s)")
+	plt.ylabel("Packet Traffic (KB/s)")
 	plt.title("IN")
 	plt.savefig(trafficinres)
 	plt.clf()
@@ -93,7 +114,7 @@ def plotter(dirname):
 	plt.plot(trafficout_src)
 	plt.legend(["Client", "Destination", "Source"])
 	plt.xlabel("Time Tick")
-	plt.ylabel("Packet Traffic (Bytes/s)")
+	plt.ylabel("Packet Traffic (KB/s)")
 	plt.title("OUT")
 	plt.savefig(trafficoutres)
 	plt.clf()

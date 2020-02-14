@@ -4,9 +4,18 @@ import sys
 import time
 import matplotlib.pyplot as plt
 
+def getIndex(arr, str):
+	i = 0
+	for a in arr:
+		if a.find(str) >= 0:
+			return i
+		i+=1
+	return -1
+
 def plotter(dirname):
-	datapath=os.path.join(dirname, 'results.csv')
+	datapath = os.path.join(dirname, 'results.csv')
 	resultpath = os.path.join(dirname, 'results')
+	migrpath = os.path.join(dirname, 'migr_time')
 
 	infile = open(migrpath, 'r')
 	migrline = infile.readline().strip()
@@ -15,6 +24,9 @@ def plotter(dirname):
 		mig_ts.append((int(mtime[:10])))
 
 	with open(datapath) as csvfile:
+		print(mig_ts[0]-15)
+		print(mig_ts[1]+15)
+		
 		timestamp_all = []
 		load_cli = []
 		load_dst = []
@@ -35,26 +47,47 @@ def plotter(dirname):
 		trafficout_src = []
 		csvreader = csv.reader(csvfile, delimiter=',', quotechar='|')
 		first_row = next(csvreader)
+		
+		load_cli_i = getIndex(first_row, 'load_cli')
+		load_dst_i = getIndex(first_row, 'load_dst')
+		load_src_i = getIndex(first_row, 'load_src')
+		tin_cli_i = getIndex(first_row, 'traffic_cli.txt_in')
+		tin_dst_i = getIndex(first_row, 'traffic_dst.txt_in')
+		tin_src_i = getIndex(first_row, 'traffic_src.txt_in')
+		tout_cli_i = getIndex(first_row, 'traffic_cli.txt_out')
+		tout_dst_i = getIndex(first_row, 'traffic_dst.txt_out')
+		tout_src_i = getIndex(first_row, 'traffic_src.txt_out')
+		lafter_i = getIndex(first_row, 'after_trafficgencl')
+		lbefore_i = getIndex(first_row, 'before_trafficgencl')
+		
+		load_n1_i = getIndex(first_row, 'load_n1')
+		tin_n1_i = getIndex(first_row, 'traffic_n1.txt_in')
+		tout_n1_i = getIndex(first_row, 'traffic_n1.txt_out')
+		load_n2_i = getIndex(first_row, 'load_n2')
+		tin_n2_i = getIndex(first_row, 'traffic_n2.txt_in')
+		tout_n2_i = getIndex(first_row, 'traffic_n2.txt_out')
+		
 		for row in csvreader:
 			if ( (mig_ts[0]-15) <= int(row[0]) <= (mig_ts[1]+15) ):
 				timestamp_all.append(row[0])
-				load_cli.append(round((100-float(row[1]))/100,2))
-				load_dst.append(round((100-float(row[2]))/100,2))
-				load_n1.append(round((100-float(row[3]))/100,2))
-				load_n2.append(round((100-float(row[4]))/100,2))
-				load_src.append(round((100-float(row[5]))/100,2))
-				trafficin_cli.append(round(float(row[6]),2))
-				trafficout_cli.append(round(float(row[7]),2))
-				trafficin_dst.append(round(float(row[8]),2))
-				trafficout_dst.append(round(float(row[9]),2))
-				latency_after.append(round(float(row[10]),2))
-				latency_before.append(round(float(row[11]),2))
-				trafficin_n1.append(round(float(row[12]),2))
-				trafficout_n1.append(round(float(row[13]),2))
-				trafficin_n2.append(round(float(row[14]),2))
-				trafficout_n2.append(round(float(row[15]),2))
-				trafficin_src.append(round(float(row[16]),2))
-				trafficout_src.append(round(float(row[17]),2))
+				load_cli.append(round((100-float(row[load_cli_i]))/100,2))
+				load_dst.append(round((100-float(row[load_dst_i]))/100,2))
+				load_src.append(round((100-float(row[load_src_i]))/100,2))
+				trafficin_cli.append(round(float(row[tin_cli_i]),2))
+				trafficout_cli.append(round(float(row[tout_cli_i]),2))
+				trafficin_dst.append(round(float(row[tin_dst_i]),2))
+				trafficout_dst.append(round(float(row[tout_dst_i]),2))
+				latency_after.append(round(float(row[lafter_i]),2))
+				latency_before.append(round(float(row[lbefore_i]),2))
+				trafficin_src.append(round(float(row[tin_src_i]),2))
+				trafficout_src.append(round(float(row[tout_src_i]),2))
+
+				load_n1.append(round((100-float(row[load_n1_i]))/100,2))
+				load_n2.append(round((100-float(row[load_n2_i]))/100,2))
+				trafficin_n1.append(round(float(row[tin_n1_i]),2))
+				trafficout_n1.append(round(float(row[tout_n1_i]),2))
+				trafficin_n2.append(round(float(row[tin_n2_i]),2))
+				trafficout_n2.append(round(float(row[tout_n2_i]),2))
 	csvfile.close()
 
 	try:
@@ -107,7 +140,7 @@ def plotter(dirname):
 	plt.plot(trafficout_n2)
 	plt.legend(["Client", "Destination", "Source", "n1", "n2"])
 	plt.xlabel("Time Tick")
-	plt.ylabel("Packet Traffic (Bytes/s)")
+	plt.ylabel("Packet Traffic (KB/s)")
 	plt.title("OUT")
 	plt.savefig(trafficoutres)
 	plt.clf()
