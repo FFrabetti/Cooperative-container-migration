@@ -13,26 +13,24 @@ function testbw {
 		rev="-R"
 	fi
 
-	ssh -f root@$node "(
-		lsof -ti tcp:5201 || (iperf3 -s &);
+	ssh -f root@$node "(lsof -ti tcp:5201 || iperf3 -s) &" &>/dev/null
 
-		[ $timeout -eq 0 ] || { sleep $timeout;
-		lsof -ti tcp:5201 | xargs -r kill -kill; }
-	) &" &>/dev/null
-
+	if [ $timeout -gt 0 ]; then
+		(sleep $timeout; ssh root@$node "lsof -ti tcp:5201 | xargs -r kill -kill") &
+	fi
+	
 	echo "end of server part" >&2
 
 	sleep 2
-	ssh root@$src "date +%s%N;
-		(iperf3 -c $srv $rev &);
-		(sleep 20 &);
-		wait -n;
-		ps -C iperf3 -o pid= | xargs -r kill -kill"
+	(sleep 30; ssh root@$src "ps -C iperf3 -o pid= | xargs -r kill -kill") &
+	ssh root@$src "date +%s%N; iperf3 -c $srv $rev"
+	
+	wait
 }
 
 echo "$0: $nodeclient - $nodesrc"
-testbw $nodeclient 0 $nodesrc "$basenet$client" reverse > bandwidth_src_cli.txt
-testbw $nodeclient 30 $nodesrc "$basenet$client" > bandwidth_cli_src.txt
+testbw $nodeclient 0 $nodesrc "$basenet$client" reverse | tee bandwidth_src_cli.txt
+testbw $nodeclient 30 $nodesrc "$basenet$client" | tee bandwidth_cli_src.txt
 
 while (( $# )); do
 	iperfcl=$1
@@ -43,8 +41,8 @@ while (( $# )); do
 	if [ $# -le 1 ]; then
 		srv_timeout=30
 	fi
-	testbw $nodedst 0 $node "$basenet$dst" reverse > bandwidth_${iperfcl}_dst.txt
-	testbw $nodedst $srv_timeout $node "$basenet$dst" > bandwidth_dst_${iperfcl}.txt
+	testbw $nodedst 0 $node "$basenet$dst" reverse | tee bandwidth_${iperfcl}_dst.txt
+	testbw $nodedst $srv_timeout $node "$basenet$dst" | tee bandwidth_dst_${iperfcl}.txt
 
 	shift
 done

@@ -1,10 +1,10 @@
 #!/bin/bash
 
 function getBandwidth { # FILENAME -> TIMESTAMP BW
-	local bw=$(tail -3 $1 | head -1 | rev | awk '{ print $2 " " $3 }' | rev)
-	local ts=$(head -1 $1)
+	local bw=$(tail -3 $1 | head -1 | awk 'match($0, /([0-9.]+ [a-zA-Z]+\/sec)/) { print substr($0, RSTART, RLENGTH) }')
+	local ts=$(head -1 $1 | cut -c -10)
 	
-	echo "$ts $bw"
+	echo "$(timestampToTime $ts) $bw"
 }
 
 function getTrafficPktLen {
