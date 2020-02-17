@@ -23,3 +23,7 @@ for d in "$@"; do
 done > $tfile
 
 sort $tfile
+
+# get averaged values: awk -f bw.awk
+# or all in one line:
+# awk '{ if($1 == arg && $2 == ch) line = line " " $4; else { if(line) print line; arg=$1; ch=$2; line = arg " " ch " " $4 } } END { print line }' bw.results
