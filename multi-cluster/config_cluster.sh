@@ -32,7 +32,7 @@ docker swarm init --advertise-addr $MASTER > $SWARM_INIT
 ssh $PEER "$(docker swarm join-token manager | grep 'join --token')"
 
 while (( $# )); do
-	ssh $1 "$(cat $SWARM_INIT | grep 'join --token')"
+	ssh $1 "$(grep 'join --token' $SWARM_INIT)"
 	shift
 done
 

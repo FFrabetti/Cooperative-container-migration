@@ -97,7 +97,7 @@ while sleep $PERIOD; do
 			echo "Updating $MANIFEST_FILE"
 						
 			# for each layer, set field urls
-			cat "$MANIFEST_FILE" | python3 $DIR/update_manifest_urls.py "$WORK_DIR" > "${MANIFEST_FILE}.out"
+			python3 $DIR/update_manifest_urls.py "$WORK_DIR" < "$MANIFEST_FILE" > "${MANIFEST_FILE}.out"
 			
 			# upload updated manifest
 			curl -v $REGISTRY/v2/$REPO/manifests/$TAG \

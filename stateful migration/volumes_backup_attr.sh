@@ -32,9 +32,8 @@ docker container inspect $CONTAINER --format='{{range $m := .Mounts}}
 	fi
 done >> "$BACKUP_DIR"/volumes.list
 
-cat "$BACKUP_DIR"/volumes.list | docker run \
-	--rm --volumes-from $CONTAINER:ro \
+docker run --rm --volumes-from $CONTAINER:ro \
 	-v $(pwd)/"$BACKUP_DIR":/backup \
 	-v $(pwd)/"$SCRIPT":/"$SCRIPT" \
 	-a stdin -a stdout -i \
-	ubuntu /"$SCRIPT"
+	ubuntu /"$SCRIPT" < "$BACKUP_DIR"/volumes.list

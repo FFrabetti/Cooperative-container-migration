@@ -35,10 +35,10 @@ MANIFEST_FILE="$(echo $IMAGE_REPO | sed 's/\//./g').$IMAGE_TAG.mnf"
 # 1. from an image (repository and tag), get the digests of its layers
 # DIGESTS=$(registry_api.sh $SOURCE_REGISTRY $IMAGE_REPO $IMAGE_TAG)
 curl_registry_api.sh $SOURCE_REGISTRY $IMAGE_REPO $IMAGE_TAG "$MANIFEST_FILE"
-DIGESTS=$(cat "$MANIFEST_FILE" | python3 -c "import sys, json;
+DIGESTS=$(python3 -c "import sys, json;
 for l in json.load(sys.stdin)['layers']:
 	print(l['digest'])
-")
+" < "$MANIFEST_FILE")
 
 NR_LAYERS=$(echo "$DIGESTS" | wc -l)
 echo "$NR_LAYERS layers found for $IMAGE_REPO:$IMAGE_TAG"
@@ -92,7 +92,7 @@ curl -Ss $CENTRAL_REGISTRY/v2/$IMAGE_REPO/manifests/$IMAGE_TAG \
 
 # 3.2 for each new layer: parse JSON and get an URL (chosen with a certain policy)
 for DIGEST in ${newlayers[@]}; do
-	URL=$(cat "$MNF" | python3 $DIR/get_url_from_digest.py $DIGEST)
+	URL=$(python3 $DIR/get_url_from_digest.py $DIGEST < "$MNF")
 
 	# #### for periodic pull requests performed by the destination itself ####
 	#LAYER_FILE="$WORK_DIR/${DIGEST}.txt"
@@ -117,8 +117,8 @@ for DIGEST in ${newlayers[@]}; do
 done
 
 # 4.2 (get manifest, get config blob) push config and manifest
-CONF_DGST=$(cat "$MANIFEST_FILE" | python3 -c "import sys, json; print(json.load(sys.stdin)['config']['digest'])")
-CONF_LEN=$(cat "$MANIFEST_FILE" | python3 -c "import sys, json; print(json.load(sys.stdin)['config']['size'])")
+CONF_DGST=$(python3 -c "import sys, json; print(json.load(sys.stdin)['config']['digest'])" < "$MANIFEST_FILE")
+CONF_LEN=$(python3 -c "import sys, json; print(json.load(sys.stdin)['config']['size'])" < "$MANIFEST_FILE")
 curl_registry_api.sh $SOURCE_REGISTRY $IMAGE_REPO $CONF_DGST "$CONF_FILE" config
 
 rm "$URL_FILE" # if present, get_upload_url.sh checks upload status

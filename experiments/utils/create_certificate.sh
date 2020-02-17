@@ -3,7 +3,7 @@
 ipaddr=$1
 
 if [ ! -f "certs/domain.key" ]; then
-	cat Cooperative-container-migration/various/config/san_v3_ca.cnf | grep -v "IP." > san_v3.cnf
+	grep -v "IP." Cooperative-container-migration/various/config/san_v3_ca.cnf > san_v3.cnf
 	echo "IP.1 = $ipaddr" >> san_v3.cnf
 	
 	mkdir -p certs

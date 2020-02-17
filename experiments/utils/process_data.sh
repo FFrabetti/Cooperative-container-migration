@@ -18,7 +18,7 @@ done
 for tcpd in $(ls traffic*); do
 	if [ -f $tcpd ]; then
 		#cat $tcpd | getTrafficPktLen > "pr.$tcpd"
-		cat $tcpd | processIfstat "pr.${tcpd}_in" "pr.${tcpd}_out"
+		processIfstat "pr.${tcpd}_in" "pr.${tcpd}_out" < $tcpd
 		
 		# debug
 		#[ $DEBUG ] && tail -v -n 5 "pr.$tcpd"
@@ -28,7 +28,7 @@ done
 
 for mps in $(ls load_*); do
 	if [ -f $mps ]; then
-		cat $mps | getTimeIdle > "pr.$mps"
+		getTimeIdle < $mps > "pr.$mps"
 		
 		#debug
 		[ $DEBUG ] && tail -v -n 5 "pr.$mps"
@@ -42,7 +42,7 @@ cp logs2/trafficgencl.log after_trafficgencl.log
 for clientlog in "before_trafficgencl.log" "after_trafficgencl.log"; do
 	if [ -f $clientlog ]; then
 		# $(date "+%d %m %Y")
-		cat $clientlog | getInteractiveCli | getAverageOverS > "pr.$clientlog"
+		getInteractiveCli < $clientlog | getAverageOverS > "pr.$clientlog"
 		
 		# debug
 		[ $DEBUG ] && tail -v -n 5 "pr.$clientlog"
