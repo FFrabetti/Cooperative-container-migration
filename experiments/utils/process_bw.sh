@@ -7,7 +7,7 @@ currdir=$(pwd)
 tfile=$(mktemp)
 
 for d in "$@"; do
-	if [ -d "$d" ]; then
+	if [ -d "$d" ] && [ -f "$d/args" ]; then
 		cd "$d"
 		
 		a=$(cat args)

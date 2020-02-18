@@ -42,7 +42,7 @@ function getTimeIdle {
 #	awk 'BEGIN { FS="[ :]" } { if($4 == "PM") $1+=12; print mktime("'$3' '$1' '$2' " $1 " " $2 " " $3), $NF } }'
 #}
 
-function processIfstat { # $1 filein $2 fileout
+function processIfstat { # $1 := filein, $2 := fileout
 	read date
 	read header1
 	read header2
