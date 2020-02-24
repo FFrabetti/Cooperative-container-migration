@@ -349,10 +349,10 @@ In this case `<REGISTRY>` (e.g. `https://<MASTER_ADDR>`) and `<REDIS_HOST>` both
 Up to now, we have implicitly assumed the presence of a Docker Registry and of a Redis instance with volumes and checkpoints "registries" every node could refer to for queries and updates.
 Within a single cluster, those can reasonably be located at a master node, performing coordination and orchestration tasks in a centralized way. In large clusters or in multi-cluster scenarios, however, some issues arise from the problem of managing neighborhoods and "local" data in a scalable way.
 
-A viable solution may be to partition and replicate the information once stored at the master on every single node, moving towards a decentralized scenario where control is distributed among peers.
+A different solution may be to partition and replicate the information once stored at the master on every single node, moving towards a decentralized scenario where control is distributed among peers.
 Every node would have its own local registries it can query about image layers, volumes and checkpoints _in its neighborhood_, without requiring the intervention of a mediator. While the reading side seems perfectly fine, the writing side has some problems, as nodes would have to keep updating all their neighbors of every change.
 
-This problem can be mitigated with a public/subscribe approach based on notification events: for every change regarding node N, an event is published to its respective topic and all subscribers (N's neighbors) get notified by the messaging system.
+This problem can be mitigated with a publish/subscribe approach based on notification events: for every change regarding node N, an event is published to its respective topic and all subscribers (N's neighbors) get notified by the messaging system.
 
 An easy way of implementing this mechanism is by exploiting [Redis Pub/Sub](https://redis.io/topics/pubsub) on each node's local Redis instance, but the management of control messages is a whole problem on its own and it is out of the scope of this work to address it.
 

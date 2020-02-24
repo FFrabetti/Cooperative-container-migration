@@ -68,7 +68,7 @@ We consider all the channels between the three of them (`SD`, `CS`, `CD`).
 
 > In a "centralized" version, the image manifest and, optionally, the container layers content itself would be fetched from a Registry located at the master, but this case would be extremely similar to the proposed one and of little interest.
 
-Network scenarios (latency, bandwidth, error rate):
+Network scenarios (delay, bandwidth):
 
 Ntw X   | `SD` | `CS` | `CD`
 ------- | ---- | ---- | ----

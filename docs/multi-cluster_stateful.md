@@ -30,7 +30,7 @@ Not differently from the case of content fetching, executing tasks in a remote c
 > To make the forwarding more evident, the proxies can even use different APIs to communicate with one another.
 
 The simplification here is that each RPC is perfectly synchronous, so the caller waits for the task to be completed, which can be optimized with an asynchronous behaviour whenever `DestinationProxy` can actually replace the destination in an active role.
-For example, it may require the source to create archives with the updated content of all its writable layers, as they are certainly going to be requested, or to take a snapshot even before the request arrives from the destination.
+For example, it may require the source to create archives with the updated content of all its writable volumes, as they are certainly going to be requested, or to take a snapshot even before the request arrives from the destination.
 
 A key point here is again being able to address entities across clusters. We have already stated how this is possible for layers and volumes, but not for containers: how does the destination refer to the source container and how does `SourceProxy` know where/in which node the container is located?
 
