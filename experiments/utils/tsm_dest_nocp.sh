@@ -215,12 +215,42 @@ UCONT_ID_RO=$(docker run -d \
 	$MOUNTSTR_RO ubuntu /tar_to_vol.sh ${VOLNAMES_RO[@]})
 
 
+
+# 2.3 transfer checkpoint
+CHECKPOINT=$(date +%F_%H-%M-%S) 	# (e.g. 2020-01-06_08-09-15)
+CHECKPOINT_F="${CHECKPOINT}-final"
+
+# leave running
+ssh $SOURCE "$REMOTE_SH_DIR/criu_checkpoint.sh $CONTAINER $CHECKPOINT $REMOTE_CHECKPT_DIR" > "$CONTAINER.$CHECKPOINT.tar"
+
+mkdir -p "$CHECKPT_DIR"
+tar xf "$CONTAINER.$CHECKPOINT.tar" -C "$CHECKPT_DIR"
+mv "$CHECKPT_DIR/$CHECKPOINT" "$CHECKPT_DIR/$CHECKPOINT_F"
+
+
+
 TARGET_CONTAINER=$(docker create $CONTAINER_OPT \
 	--volumes-from $UCONT_ID \
 	--volumes-from $UCONT_ID_RO:ro \
 	$REGISTRY_TAG) 	# use pulled image
 
 echoDebug "Waiting a few seconds..." && sleep 5
+
+
+
+(
+	docker start $TARGET_CONTAINER
+	sleep 2 	# it fails without: Error response from daemon: OCI runtime restore failed: criu failed: type NOTIFY errno 0
+	docker checkpoint create $TARGET_CONTAINER $CHECKPOINT_F --checkpoint-dir=$(mktemp -d)
+) &
+
+# 3. stop container and 4.1 send checkpoint difference
+ssh $SOURCE "docker checkpoint create $CONTAINER $CHECKPOINT_F --checkpoint-dir=\"$REMOTE_CHECKPT_DIR\""
+
+rsyncFrom $SOURCE "$REMOTE_CHECKPT_DIR/$CHECKPOINT_F/" "$CHECKPT_DIR/$CHECKPOINT_F" "-acz --delete" || error_exit "final checkpoint rsync"
+
+cp -r "$CHECKPT_DIR/$CHECKPOINT_F" "/var/lib/docker/containers/$TARGET_CONTAINER/checkpoints/"
+
 
 
 # 4.2 sync writable volumes content
@@ -248,7 +278,8 @@ docker run \
 	ubuntu /tar_to_vol.sh $CHANGED_VOLS 	# names of the tar archives 
 
 # 5. start target container from checkpoint
-docker start $TARGET_CONTAINER && echo -e '\n\nSUCCESS!\nStarted container:' "$TARGET_CONTAINER"
+wait
+docker start --checkpoint=$CHECKPOINT_F $TARGET_CONTAINER && echo -e '\n\nSUCCESS!\nStarted container:' "$TARGET_CONTAINER"
 
 
 # -------------------------------- CLEAN UP --------------------------------

@@ -496,13 +496,13 @@ By checking its output (`docker logs looper-clone`), we should see the counting 
 Steps 2 and 4 can also be done by running these scripts:
 ```
 docker run --name looper ... # see above
-criu_checkpoint.sh looper cp1 checkpts
+criu_checkpoint.sh looper cp1 checkpts > looper.cp1.tar
 ```
 ([criu_checkpoint.sh](../stateful%20migration/criu_checkpoint.sh))
 
 ```
 docker create --name looper-clone ... # see above
-scp SOURCE:checkpts/looper.cp1.tar looper.cp1.tar
+scp SOURCE:looper.cp1.tar ./
 criu_restore.sh looper-clone cp1 < looper.cp1.tar
 ```
 ([criu_restore.sh](../stateful%20migration/criu_restore.sh))
