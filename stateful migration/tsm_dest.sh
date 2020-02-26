@@ -233,10 +233,9 @@ if [ $EUID -ne 0 ]; then
 	echo "$PASSWD" | ssh -tt $SOURCE "$REMOTE_SH_DIR/criu_checkpoint.sh $CONTAINER $CHECKPOINT $REMOTE_CHECKPT_DIR"
 else
 	ssh $SOURCE "$REMOTE_SH_DIR/criu_checkpoint.sh $CONTAINER $CHECKPOINT $REMOTE_CHECKPT_DIR"
-fi
+fi > "$CONTAINER.$CHECKPOINT.tar"
 # ################ SECURITY ALERT ################
 
-scp $SOURCE:"$REMOTE_CHECKPT_DIR/$CONTAINER.$CHECKPOINT.tar" ./ || error_exit "scp"
 tar xf "$CONTAINER.$CHECKPOINT.tar" -C "$CHECKPT_DIR"
 
 

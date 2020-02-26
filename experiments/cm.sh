@@ -64,7 +64,7 @@ if [ $runfromscratch ]; then
 	bash set_channel.sh	< $channelparams 2>&1 | tee set_channel.log
 
 	# 4. Measure bandwidth (client-src + $...-dst)
-	bash measure_bw.sh src client one two
+	# bash measure_bw.sh src client one two
 fi
 
 # 5. Set load baseline
@@ -101,6 +101,14 @@ echo "Build container image and distribute layers"
 # update "master" registry with layer locations
 sshroot $nodedst "cm_setup.sh trafficgen ${appversion}d https://$basenet$dst:7000 https://$basenet$src https://$basenet$one https://$basenet$two"
 
+sshroot $nodeclient "if [ ! -d trafficgencl ]; then
+		tar -xf Cooperative-container-migration/executable/trafficgencl.tar;
+		cd trafficgencl;
+		docker build -t trafficgencl:1.0 .;
+		cd ..;
+		mkdir -p logs;
+	fi"
+
 # 9. Measure load and traffic
 sshrootbg $nodesrc		"measureLoad.sh 1 loadlocal.txt; measureIfTraffic.sh 1 traffic.txt $ip_if"
 sshrootbg $nodedst		"measureLoad.sh 1 loadlocal.txt; measureIfTraffic.sh 1 traffic.txt $ip_if"
@@ -114,13 +122,6 @@ sleep 10
 
 # 10. Start client container
 echo "Start client container"
-sshroot $nodeclient "if [ ! -d trafficgencl ]; then
-		tar -xf Cooperative-container-migration/executable/trafficgencl.tar;
-		cd trafficgencl;
-		docker build -t trafficgencl:1.0 .;
-		cd ..;
-		mkdir -p logs;
-	fi"
 
 prTimeFile="pr_sequence"
 if [ ! -f $prTimeFile ]; then
@@ -153,7 +154,7 @@ sshrootbg $nodeclient "(interactive_client.sh $respsize $prTimeFile | docker run
 
 
 echo "Sleep for a few seconds, collecting post-migration measurements..."
-sleep 30 	# for tcpdump weird buffered behavior...
+sleep 20 	# for tcpdump weird buffered behavior...
 
 # 11. Data collection
 echo "$beforemigr $aftermigr" > "$EXPDIR/migr_time"

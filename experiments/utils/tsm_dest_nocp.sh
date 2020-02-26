@@ -238,17 +238,22 @@ echoDebug "Waiting a few seconds..." && sleep 5
 
 
 
+# 3. stop container and 4.1 send checkpoint difference
 (
+	# it fails without: Error response from daemon: OCI runtime restore failed: criu failed: type NOTIFY errno 0
 	docker start $TARGET_CONTAINER
-	sleep 2 	# it fails without: Error response from daemon: OCI runtime restore failed: criu failed: type NOTIFY errno 0
 	docker checkpoint create $TARGET_CONTAINER $CHECKPOINT_F --checkpoint-dir=$(mktemp -d)
 ) &
 
-# 3. stop container and 4.1 send checkpoint difference
-ssh $SOURCE "docker checkpoint create $CONTAINER $CHECKPOINT_F --checkpoint-dir=\"$REMOTE_CHECKPT_DIR\""
+(
+	ssh $SOURCE "docker container stop $CONTAINER;
+	docker container start $CONTAINER;
+	docker checkpoint create $CONTAINER $CHECKPOINT_F --checkpoint-dir=\"$REMOTE_CHECKPT_DIR\""
+	
+	rsyncFrom $SOURCE "$REMOTE_CHECKPT_DIR/$CHECKPOINT_F/" "$CHECKPT_DIR/$CHECKPOINT_F" "-acz --delete" || error_exit "final checkpoint rsync"
+) &
 
-rsyncFrom $SOURCE "$REMOTE_CHECKPT_DIR/$CHECKPOINT_F/" "$CHECKPT_DIR/$CHECKPOINT_F" "-acz --delete" || error_exit "final checkpoint rsync"
-
+wait
 cp -r "$CHECKPT_DIR/$CHECKPOINT_F" "/var/lib/docker/containers/$TARGET_CONTAINER/checkpoints/"
 
 
@@ -278,7 +283,6 @@ docker run \
 	ubuntu /tar_to_vol.sh $CHANGED_VOLS 	# names of the tar archives 
 
 # 5. start target container from checkpoint
-wait
 docker start --checkpoint=$CHECKPOINT_F $TARGET_CONTAINER && echo -e '\n\nSUCCESS!\nStarted container:' "$TARGET_CONTAINER"
 
 

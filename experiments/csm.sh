@@ -66,7 +66,7 @@ if [ $runfromscratch ]; then
 	bash set_channel.sh	< $channelparams 2>&1 | tee set_channel.log
 
 	# 4. Measure bandwidth (client-src + $...-dst)
-	bash measure_bw.sh src client one two
+	# bash measure_bw.sh src client one two
 fi
 
 # 5. Set load baseline
@@ -131,6 +131,14 @@ echo "Using old cached volume size: $oldvsize KB"
 sshroot $nodeone "csm_neigh_setup.sh $basenet$dst $basenet$one v2_${volumesize}_guid $oldvsize 2 100;"
 sshroot $nodetwo "csm_neigh_setup.sh $basenet$dst $basenet$two v3_${volumesize}_guid $oldvsize 3 100;"
 
+sshroot $nodeclient "if [ ! -d trafficgencl ]; then
+		tar -xf Cooperative-container-migration/executable/trafficgencl.tar;
+		cd trafficgencl;
+		docker build -t trafficgencl:1.0 .;
+		cd ..;
+		mkdir -p logs;
+	fi"
+
 # 9. Measure load and traffic
 sshrootbg $nodesrc		"measureLoad.sh 1 loadlocal.txt; measureIfTraffic.sh 1 traffic.txt $ip_if"
 sshrootbg $nodedst		"measureLoad.sh 1 loadlocal.txt; measureIfTraffic.sh 1 traffic.txt $ip_if"
@@ -144,13 +152,6 @@ sleep 10
 
 # 10. Start client container
 echo "Start client container"
-sshroot $nodeclient "if [ ! -d trafficgencl ]; then
-		tar -xf Cooperative-container-migration/executable/trafficgencl.tar;
-		cd trafficgencl;
-		docker build -t trafficgencl:1.0 .;
-		cd ..;
-		mkdir -p logs;
-	fi"
 
 prTimeFile="pr_sequence"
 if [ ! -f $prTimeFile ]; then
@@ -182,7 +183,7 @@ sshrootbg $nodeclient "(interactive_client.sh \"$respsize 100 100\" $prTimeFile 
 
 
 echo "Sleep for a few seconds, collecting post-migration measurements..."
-sleep 30
+sleep 20
 echo "Files in trafficgen@/usr/local/tomcat/myvol:"
 sshroot $nodedst "docker exec trafficgen /bin/sh -c 'ls -l /usr/local/tomcat/myvol | wc -l'"
 
