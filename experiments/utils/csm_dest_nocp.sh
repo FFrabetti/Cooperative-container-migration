@@ -238,8 +238,26 @@ UCONT_ID_RO=$(docker run -d \
 	$MOUNTSTR_RO ubuntu /tar_to_vol.sh ${VOLNAMES_RO[@]})
 
 
+
+# 2.3 transfer checkpoint
+CHECKPOINT=$(date +%F_%H-%M-%S) 	# (e.g. 2020-01-06_08-09-15)
+CHECKPOINT_F="${CHECKPOINT}-final"
+mkdir -p "$CHECKPT_DIR/$CHECKPOINT"
+
+# --force local 	archive file is local even if it has a colon
+fetchCheckpt "$IMAGE" "$USER_ID" && tar xf "./$IMAGE.tar" --force-local -C "$CHECKPT_DIR/$CHECKPOINT"
+
+ssh $SOURCE "mkdir -p $REMOTE_CHECKPT_DIR;
+	docker checkpoint create $CONTAINER $CHECKPOINT --checkpoint-dir=$REMOTE_CHECKPT_DIR --leave-running"
+
+rsyncFrom $SOURCE "$REMOTE_CHECKPT_DIR/$CHECKPOINT/" "$CHECKPT_DIR/$CHECKPOINT" "-acz --delete" || error_exit "checkpoint rsync"
+
+mv "$CHECKPT_DIR/$CHECKPOINT" "$CHECKPT_DIR/$CHECKPOINT_F"
+
+
+
 echo "Create target container: $CONTAINER_OPT"
-	
+
 # remove https:// if present
 if [[ $LOCAL_REGISTRY =~ ^[^0-9]+(.+) ]]; then
 	LOCAL_REGISTRY=${BASH_REMATCH[1]}
@@ -252,6 +270,27 @@ TARGET_CONTAINER=$(docker create $CONTAINER_OPT \
 	"$LOCAL_REGISTRY/$IMAGE")
 
 echoDebug "Waiting a few seconds..." && sleep 5
+
+
+
+# 3. stop container and 4.1 send checkpoint difference
+(
+	# it fails without: Error response from daemon: OCI runtime restore failed: criu failed: type NOTIFY errno 0
+	docker start $TARGET_CONTAINER
+	docker checkpoint create $TARGET_CONTAINER $CHECKPOINT_F --checkpoint-dir=$(mktemp -d)
+) &
+
+(
+	ssh $SOURCE "docker container stop $CONTAINER;
+	docker container start $CONTAINER;
+	docker checkpoint create $CONTAINER $CHECKPOINT_F --checkpoint-dir=\"$REMOTE_CHECKPT_DIR\""
+	
+	rsyncFrom $SOURCE "$REMOTE_CHECKPT_DIR/$CHECKPOINT_F/" "$CHECKPT_DIR/$CHECKPOINT_F" "-acz --delete" || error_exit "final checkpoint rsync"
+) &
+
+wait
+cp -r "$CHECKPT_DIR/$CHECKPOINT_F" "/var/lib/docker/containers/$TARGET_CONTAINER/checkpoints/"
+
 
 
 # 4.2 sync writable volumes content
@@ -279,7 +318,7 @@ docker run \
 	ubuntu /tar_to_vol.sh $CHANGED_VOLS 	# names of the tar archives 
 
 # 5. start target container from checkpoint
-docker start $TARGET_CONTAINER && echo -e '\n\nSUCCESS!\nStarted container:' "$TARGET_CONTAINER"
+docker start --checkpoint=$CHECKPOINT_F $TARGET_CONTAINER && echo -e '\n\nSUCCESS!\nStarted container:' "$TARGET_CONTAINER"
 
 
 # -------------------------------- CLEAN UP --------------------------------
