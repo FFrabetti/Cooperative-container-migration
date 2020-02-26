@@ -1,6 +1,9 @@
 #!/bin/bash
 
-which redis-cli > /dev/null || { echo "Error: redis-cli not found"; exit 1; }
+which redis-cli >/dev/null || { 	# try to install it
+	apt-get -y install redis-tools
+	which redis-cli >/dev/null || { echo "Error: redis-cli not found"; exit 1; }
+}
 
 # ${parameter:-word}
 # If parameter is unset or null, the expansion of word is substituted. Otherwise, the value of parameter is substituted.
