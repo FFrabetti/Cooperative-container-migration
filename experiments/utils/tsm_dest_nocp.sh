@@ -221,10 +221,11 @@ CHECKPOINT=$(date +%F_%H-%M-%S) 	# (e.g. 2020-01-06_08-09-15)
 CHECKPOINT_F="${CHECKPOINT}-final"
 
 # leave running
-ssh $SOURCE "$REMOTE_SH_DIR/criu_checkpoint.sh $CONTAINER $CHECKPOINT $REMOTE_CHECKPT_DIR" > "$CONTAINER.$CHECKPOINT.tar"
+checkpt_tar="${CONTAINER}.${CHECKPOINT}.tar"
+ssh $SOURCE "$REMOTE_SH_DIR/criu_checkpoint.sh $CONTAINER $CHECKPOINT $REMOTE_CHECKPT_DIR" > $checkpt_tar
 
 mkdir -p "$CHECKPT_DIR"
-tar xf "$CONTAINER.$CHECKPOINT.tar" -C "$CHECKPT_DIR"
+tar xf $checkpt_tar -C "$CHECKPT_DIR" || { echo "Error: tar $checkpt_tar"; exit 1; }
 mv "$CHECKPT_DIR/$CHECKPOINT" "$CHECKPT_DIR/$CHECKPOINT_F"
 
 
@@ -235,6 +236,9 @@ TARGET_CONTAINER=$(docker create $CONTAINER_OPT \
 	$REGISTRY_TAG) 	# use pulled image
 
 echoDebug "Waiting a few seconds..." && sleep 5
+
+echo "TARGET_CONTAINER = $TARGET_CONTAINER"
+[[ "$TARGET_CONTAINER" =~ [0-9a-f]+ ]] || { echo "Error: docker create $CONTAINER_OPT $REGISTRY_TAG"; exit 1; }
 
 
 
