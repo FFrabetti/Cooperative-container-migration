@@ -271,6 +271,9 @@ TARGET_CONTAINER=$(docker create $CONTAINER_OPT \
 
 echoDebug "Waiting a few seconds..." && sleep 5
 
+echo "TARGET_CONTAINER = $TARGET_CONTAINER"
+[[ "$TARGET_CONTAINER" =~ [0-9a-f]+ ]] || { echo "Error: docker create failed $CONTAINER_OPT $REGISTRY_TAG"; exit 1; }
+
 
 
 # 3. stop container and 4.1 send checkpoint difference
