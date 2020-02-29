@@ -8,14 +8,21 @@ i=0
 while read d; do
 	if [ -d "$d" ]; then
 		cd "$d"
-	
+		
+		read mstart mend < migr_time
+		mstart=$(echo $mstart | cut -c -10)
+		mend=$(echo $mend | cut -c -10)
+		
 		for tr in $(ls pr.traffic*); do
 			if [ -f $tr ]; then
 				# echo "$i $d/$tr"
-				awk 'BEGIN { print "time", "KB", "thr" }
-					NR==1 { start=$1 }
+				awk 'NR==1 { start=$1 }
 					{ tot+=$2 }
-					END { tottime=$1-start; print "'$i'", "'$tr'", tottime, tot, (tot/tottime) }' "$tr"
+					$1>='$mstart' && $1<'$mend' { mtot+=$2 }
+					END {
+						tottime=$1-start; mt='$mend'-'$mstart';
+						print "'$i'", "'$tr'", tottime, tot, (tot/tottime), mt, mtot, (mtot/mt)
+					}' "$tr"
 			fi
 		done
 		
