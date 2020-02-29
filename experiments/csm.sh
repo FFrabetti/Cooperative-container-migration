@@ -97,7 +97,7 @@ echo "Build container image and distribute layers"
 	echo "$basenet$one ${appversion}b"
 	echo "$basenet$two ${appversion}c"
 	echo "$basenet$dst:7000 ${appversion}d"
-} | sshroot $nodesrc "src_build_image.sh $appversion $layersize;
+} | sshroot $nodesrc "src_build_image.sh trafficgen $appversion $layersize;
 
 	[ -d trafficgen ] && rm -rf trafficgen;
 	src_fill_volumes.sh $volumesize v1_${volumesize} v2_${volumesize} v3_${volumesize};

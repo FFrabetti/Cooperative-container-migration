@@ -94,7 +94,7 @@ echo "Build container image and distribute layers"
 	echo "$basenet$one ${appversion}b"
 	echo "$basenet$two ${appversion}c"
 	echo "$basenet$dst:7000 ${appversion}d"
-} | sshroot $nodesrc "src_build_image.sh $appversion $layersize;
+} | sshroot $nodesrc "src_build_image.sh trafficgen $appversion $layersize;
 	docker container rm -f trafficgen 2>/dev/null;
 	docker run -d -v /etc/timezone:/etc/timezone:ro -v /etc/localtime:/etc/localtime:ro -p 8080:8080 --name trafficgen trafficgen:${appversion}d;"
 

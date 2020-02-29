@@ -4,7 +4,7 @@ source config.sh || { echo "config.sh not found"; exit 1; }
 
 usage () {
   echo "Usage:"
-  echo "   ./$(basename $0) (channelparams | '0') loadparams loadtimeout layersize appversion respsize volumesize"
+  echo "   ./$(basename $0) (channelparams | '0') loadparams loadtimeout layersize appversion respsize volumesize changevol"
   exit 0
 }
 
@@ -14,7 +14,7 @@ if [[ ( $# == "--help") ||  $# == "-h" ]]
                 exit 0
 fi
 
-if [ "$#" -lt 7 ]; then
+if [ "$#" -lt 8 ]; then
   echo "Insufficient parameters!"
   usage
 fi
@@ -26,9 +26,10 @@ layersize=$4
 appversion=$5
 respsize=$6
 volumesize=$7
+changevol=$8
 
-TT="int"	 # traffic type
-EXPDIR="tm_sf_${TT}_$(date +%F_%H-%M-%S)"
+TT="opencv"
+EXPDIR="cm_sf_${TT}_$(date +%F_%H-%M-%S)"
 mkdir -p $EXPDIR
 cp $loadparams "$EXPDIR/"
 echo "$@" > "$EXPDIR/args"
@@ -40,19 +41,19 @@ fi
 
 
 # 0. kill background processes from previous runs
-for n in $nodesrc $nodedst $nodeclient; do
+for n in $nodesrc $nodedst $nodeclient $nodeone $nodetwo; do
 	sshroot $n "clean_bg.sh"
 done
 
 if [ $runfromscratch ]; then
 	# 1. Set network interfaces + setup.sh (git pull and .sh links in bin)
-	bash setup_resources.sh src dst client 2>&1 | tee setup_resources.log
+	bash setup_resources.sh src dst client one two 2>&1 | tee setup_resources.log
 
 	# /root/bin directories should have been created
 	sshroot $nodedst "[ -d /root/bin ]" || { echo "Error!"; exit 1; }
 
 	# 2. Create and sign certificates
-	for n in src dst; do
+	for n in src dst one two; do
 		node=$(getNode $n)
 		ip=$(getIp $n)
 		sshroot $node "create_certificate.sh $ip"
@@ -65,7 +66,7 @@ if [ $runfromscratch ]; then
 	bash set_channel.sh	< $channelparams 2>&1 | tee set_channel.log
 
 	# 4. Measure bandwidth (client-src + $...-dst)
-	# bash measure_bw.sh src client
+	# bash measure_bw.sh src client one two
 fi
 
 # 5. Set load baseline
@@ -76,7 +77,11 @@ bash set_load.sh $loadtimeout < $loadparams 2>&1 | tee set_load.log
 sshroot $nodedst "docker rm -f \$(docker ps -qa) 2>/dev/null;
 	docker system prune -fa --volumes;
 	local_registry.sh certs;
+	local_registry.sh certs 7000;
 	docker pull ubuntu;" # for tartovol/voltotar
+
+sshroot $nodeone "if [ ! \$(docker ps -q --filter 'name=^sec_registry$') ]; then local_registry.sh certs; fi"
+sshroot $nodetwo "if [ ! \$(docker ps -q --filter 'name=^sec_registry$') ]; then local_registry.sh certs; fi"
 
 # 6.1 Clean client
 sshroot $nodeclient "docker rm -f \$(docker ps -qa) 2>/dev/null;
@@ -89,86 +94,77 @@ echo "Build container image and distribute layers"
 { 	# registry imagetag (tag and push images)
 	echo "$basenet$src ${appversion}d"
 	echo "$basenet$dst $appversion"
-} | sshroot $nodesrc "src_build_image.sh trafficgen $appversion $layersize;
-	
-	[ -d trafficgen ] && rm -rf trafficgen;
-	src_fill_volumes.sh $volumesize v1_${volumesize} v2_${volumesize} v3_${volumesize};
-	docker pull ubuntu;
-	
-	docker container rm -f trafficgen 2>/dev/null;
-	docker run -d \
-		-v /etc/timezone:/etc/timezone:ro -v /etc/localtime:/etc/localtime:ro \
-		-v v1_${volumesize}:/usr/local/tomcat/myvol \
-		-v v2_${volumesize}:/testrw2 \
-		-v v3_${volumesize}:/testrw3 \
-		-p 8080:8080 --name trafficgen trafficgen:${appversion}d;"
+	echo "$basenet$one ${appversion}b"
+	echo "$basenet$two ${appversion}c"
+	echo "$basenet$dst:7000 ${appversion}d"
+} | sshroot $nodesrc "src_build_image.sh lanefinding $appversion $layersize python lane_finding/main.py $basenet$client solidYellowLeft.mp4;
 
-sshroot $nodeclient "if [ ! -d trafficgencl ]; then
-		tar -xf Cooperative-container-migration/executable/trafficgencl.tar;
-		cd trafficgencl;
-		docker build -t trafficgencl:1.0 .;
-		cd ..;
-		mkdir -p logs;
-	fi"
+	src_fill_volumes.sh $volumesize v1_${volumesize};
+	docker pull ubuntu;
+
+	docker container rm -f lanefinding 2>/dev/null;"
+
+# update "master" registry with layer locations
+sshroot $nodedst "cm_setup.sh lanefinding ${appversion}d https://$basenet$dst:7000 https://$basenet$src https://$basenet$one https://$basenet$two;
+
+	docker container rm -f myredis 2>/dev/null;
+	docker run -d -p 6379:6379 --name myredis redis;"
+
+if [[ $volumesize =~ ([0-9]+)(MB) ]]; then
+	num=${BASH_REMATCH[1]}
+	unit=${BASH_REMATCH[2]}
+	num=$((num * 1024))
+else
+	num=$volumesize
+	unit=""	
+fi
+oldvsize=$((num * (100-changevol)/100))
+echo "Using old cached volume size: $oldvsize KB"
 
 # 9. Measure load and traffic
 sshrootbg $nodesrc		"measureLoad.sh 1 loadlocal.txt; measureIfTraffic.sh 1 traffic.txt $ip_if"
-#sshrootbg $nodesrc 	"measureTraffic.sh 1 trafficout.txt $ip_if out"
 sshrootbg $nodedst		"measureLoad.sh 1 loadlocal.txt; measureIfTraffic.sh 1 traffic.txt $ip_if"
 sshrootbg $nodeclient	"measureLoad.sh 1 loadlocal.txt; measureIfTraffic.sh 1 traffic.txt $ip_if"
 
-echo "Sleep for a few seconds, collecting baseline traffic/load..."
-sleep 10
+sshrootbg $nodeone		"measureLoad.sh 1 loadlocal.txt; measureIfTraffic.sh 1 traffic.txt $ip_if"
+sshrootbg $nodetwo		"measureLoad.sh 1 loadlocal.txt; measureIfTraffic.sh 1 traffic.txt $ip_if"
+
 
 # 10. Start client container
 echo "Start client container"
 
-prTimeFile="pr_sequence"
-if [ ! -f $prTimeFile ]; then
-	# len minrange maxrange
-	bash generate_rand_seq.sh 100 10 1000 > $prTimeFile
-fi
-cp $prTimeFile "$EXPDIR/"
-scp $prTimeFile root@$nodeclient:$prTimeFile
+[ -f solidYellowLeft.mp4 ] || { echo "Error: solidYellowLeft.mp4 not found"; exit 1; }
+scp solidYellowLeft.mp4 root@$nodeclient:solidYellowLeft.mp4
 
-# it runs forever, with 1s period, until the container is stopped or prTimeFile is deleted
-sshrootbg $nodeclient "interactive_client.sh \"$respsize 100 100\" $prTimeFile | docker run -v /etc/timezone:/etc/timezone:ro -v /etc/localtime:/etc/localtime:ro -i --rm -v \"\$(pwd)/logs\":/logs \
-	--name tgenclint trafficgencl:1.0 \
-	java -jar trafficgencl.jar interactive http://$basenet$src:8080/trafficgen/sinteractive &"
+sshrootbg $nodeclient "docker run -v /etc/timezone:/etc/timezone:ro -v /etc/localtime:/etc/localtime:ro \
+	-i --rm -v \"\$(pwd)/solidYellowLeft.mp4\":/solidYellowLeft.mp4 \
+	-p 8080:8080 --name opencvclient ff185/py-simple-http:0.1 &"
+
+echo "Sleep for a few seconds, collecting baseline traffic/load..."
+sleep 10
+
+sshroot $nodesrc "docker run -d \
+		-v /etc/timezone:/etc/timezone:ro -v /etc/localtime:/etc/localtime:ro \
+		-v v1_${volumesize}:/out \
+		--name lanefinding lanefinding:${appversion}d;"
 
 echo "Sleep for a few seconds, collecting pre-migration measurements..."
-sleep 10
+sleep 5
 
 
 # ################################################################
 beforemigr=$(date +%s%N)
-sshroot $nodedst "tsm_dest_nocp.sh $basenet$src trafficgen '-v /etc/timezone:/etc/timezone:ro -v /etc/localtime:/etc/localtime:ro -p 8080:8080 --name trafficgen';"
+sshroot $nodedst "csm_dest_nocp.sh $basenet$src lanefinding user1 https://$basenet$dst:7000 $basenet$dst https://$basenet$dst '-v /etc/timezone:/etc/timezone:ro -v /etc/localtime:/etc/localtime:ro --name lanefinding';"
 aftermigr=$(date +%s%N)
-
-sshrootbg $nodeclient "(interactive_client.sh \"$respsize 100 100\" $prTimeFile | docker run -v /etc/timezone:/etc/timezone:ro -v /etc/localtime:/etc/localtime:ro -i --rm -v \"\$(pwd)/logs2\":/logs \
-	--name tgenclintdst trafficgencl:1.0 \
-	java -jar trafficgencl.jar interactive http://$basenet$dst:8080/trafficgen/sinteractive &);
-	docker container rm -f tgenclint;"
 # ################################################################
 
 
 echo "Sleep for a few seconds, collecting post-migration measurements..."
 sleep 20
-echo "Files in trafficgen@/usr/local/tomcat/myvol:"
-sshroot $nodedst "docker exec trafficgen /bin/sh -c 'ls -l /usr/local/tomcat/myvol | wc -l'"
 
 # 11. Data collection
 echo "$beforemigr $aftermigr" > "$EXPDIR/migr_time"
 echo "$(((aftermigr - beforemigr) / 1000000)) ms" >> "$EXPDIR/migr_time"
-
-scp -r root@$nodeclient:logs "$EXPDIR/"
-scp -r root@$nodeclient:logs2 "$EXPDIR/"
-
-sshroot $nodesrc "mkdir -p srv_logs; docker cp trafficgen:/usr/local/tomcat/logs srv_logs"
-scp -r root@$nodesrc:srv_logs "$EXPDIR/srv_logs_src/"
-
-sshroot $nodedst "mkdir -p srv_logs; docker cp trafficgen:/usr/local/tomcat/logs srv_logs"
-scp -r root@$nodedst:srv_logs "$EXPDIR/srv_logs_dst/"
 
 cp *.log bandwidth_*.txt "$EXPDIR/" 	# (bandwidth_*.txt from measure_bw.sh)
 
@@ -185,3 +181,8 @@ scp root@$nodedst:mpstat.txt "$EXPDIR/load_dst.txt"
 
 scp root@$nodeclient:traffic.txt "$EXPDIR/traffic_cli.txt"
 scp root@$nodeclient:mpstat.txt "$EXPDIR/load_cli.txt"
+
+scp root@$nodeone:traffic.txt "$EXPDIR/traffic_n1.txt"
+scp root@$nodeone:mpstat.txt "$EXPDIR/load_n1.txt"
+scp root@$nodetwo:traffic.txt "$EXPDIR/traffic_n2.txt"
+scp root@$nodetwo:mpstat.txt "$EXPDIR/load_n2.txt"
