@@ -53,7 +53,7 @@ wait
 prevchannel=""
 i=0
 starti=0
-if [ $# -eq 1 ]; then
+if [ $# -ge 1 ]; then
 	starti=$1
 fi
 
@@ -61,6 +61,7 @@ ls="10MB"
 for ch in args/nodelay_ch.txt args/delay1ms_ch.txt args/delay5ms_ch.txt; do
 	for vs in "100" "1MB" "10MB" "100MB"; do
 		for ld in args/srchigh_load.txt args/dsthigh_load.txt args/eqmed_load.txt; do
+			echo "i=$i"
 			# check if $ld exists and start from experiment $starti
 			if [ -f $ld ] && [ $i -ge $starti ] && ([ $# -ne 2 ] || [ $i -le $2 ]); then
 			
@@ -83,8 +84,8 @@ for ch in args/nodelay_ch.txt args/delay1ms_ch.txt args/delay5ms_ch.txt; do
 				[ $# -eq 1 ] && [ $1 -eq 0 ] && exit 0
 				# ################ DEBUG ################
 			fi
+			echo "-------- END i=$i --------"
 			i=$((i+1))
-			echo -e "\n----------------\ni=$i"
 		done
 	done
 done
