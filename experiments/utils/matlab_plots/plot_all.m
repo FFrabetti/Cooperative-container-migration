@@ -318,106 +318,149 @@ clear all;
 % grid minor;
 
 %% Traffic Plots
-
-
-
-
-
-
-% latency_cm1 = dlmread('latency_exp_cm_2-08-2020.txt');
-% latency_cm2 = dlmread('latency_exp_cm_2-09-2020.txt');
-% latency_csm1 = dlmread('latency_exp_csm_2-07-2020.txt');
-% latency_csm2 = dlmread('latency_exp_csm_2-09-2020.txt');
-% latency_tm1 = dlmread('latency_exp_tm_2-09-2020.txt');
-% latency_tm2 = dlmread('latency_tm_sl_int_2020-02-09_00-31-39.txt');
-% latency_tsm1 = dlmread('latency_exp_tsm_2-08-2020.txt');
-% latency_tsm2 = dlmread('latency_exp_tsm_2-09-2020.txt');
+% traffic_tm1 = fopen('traffic_tm1.txt','r');
+% traffic_tm1 = textscan(traffic_tm1,'%d %s %f %f %f %f %f %f');
 % 
-% figure
+% traffic_cm1 = fopen('traffic_cm1.txt','r');
+% traffic_cm1 = textscan(traffic_cm1,'%d %s %f %f %f %f %f %f');
+% 
+% 
+% traffic_tsm1 = fopen('traffic_tsm4.txt','r');
+% traffic_tsm1 = textscan(traffic_tsm1,'%d %s %f %f %f %f %f %f');
+% 
+% traffic_csm1 = fopen('traffic_csm4.txt','r');
+% traffic_csm1 = textscan(traffic_csm1,'%d %s %f %f %f %f %f %f');
+% 
+% % Traffic In and Out
+% traffic_tm1_dst_in = traffic_tm1{8}(3:6:216);
+% traffic_cm1_dst_in = traffic_cm1{8}(3:10:360);
+% 
+% traffic_tm1_src_out = traffic_tm1{8}(6:6:216);
+% traffic_cm1_src_out = traffic_cm1{8}(10:10:360);
+% traffic_cm1_n1_out = traffic_cm1{8}(6:10:360);
+% traffic_cm1_n2_out = traffic_cm1{8}(8:10:360);
+% 
+% traffic_cm1_out = (traffic_cm1_src_out + traffic_cm1_n1_out + traffic_cm1_n2_out)/3;
+% 
+% traffic_tsm1_dst_in = traffic_tsm1{8}(3:6:216);
+% traffic_csm1_dst_in = traffic_csm1{8}(3:10:360);
+% 
+% traffic_tsm1_src_out = traffic_tsm1{8}(6:6:216);
+% traffic_csm1_src_out = traffic_csm1{8}(10:10:360);
+% traffic_csm1_n1_out = traffic_csm1{8}(6:10:360);
+% traffic_csm1_n2_out = traffic_csm1{8}(8:10:360);
+% 
+% traffic_csm1_out = (traffic_csm1_src_out + traffic_csm1_n1_out + traffic_csm1_n2_out)/3;
+% 
+% %Stateless traffic plots
+% %no delay
+% traffic_tm1_dst_in_case1_2_3 = (traffic_tm1_dst_in(1) + traffic_tm1_dst_in(2) + traffic_tm1_dst_in(3))/3; 
+% traffic_tm1_dst_in_case4_5_6 = (traffic_tm1_dst_in(4) + traffic_tm1_dst_in(5) + traffic_tm1_dst_in(6))/3; 
+% traffic_tm1_dst_in_case7_8_9 = (traffic_tm1_dst_in(7) + traffic_tm1_dst_in(8) + traffic_tm1_dst_in(9))/3; 
+% traffic_tm1_dst_in_case10_11_12 = (traffic_tm1_dst_in(10) + traffic_tm1_dst_in(11) + traffic_tm1_dst_in(12))/3; 
+% 
+% traffic_cm1_dst_in_case1_2_3 = (traffic_cm1_dst_in(1) + traffic_cm1_dst_in(2) + traffic_cm1_dst_in(3))/3; 
+% traffic_cm1_dst_in_case4_5_6 = (traffic_cm1_dst_in(4) + traffic_cm1_dst_in(5) + traffic_cm1_dst_in(6))/3; 
+% traffic_cm1_dst_in_case7_8_9 = (traffic_cm1_dst_in(7) + traffic_cm1_dst_in(8) + traffic_cm1_dst_in(9))/3; 
+% traffic_cm1_dst_in_case10_11_12 = (traffic_cm1_dst_in(10) + traffic_cm1_dst_in(11) + traffic_cm1_dst_in(12))/3; 
+% 
+% traffic_in_sl = [traffic_tm1_dst_in_case1_2_3, traffic_cm1_dst_in_case1_2_3; traffic_tm1_dst_in_case4_5_6, traffic_cm1_dst_in_case4_5_6; traffic_tm1_dst_in_case7_8_9, traffic_cm1_dst_in_case7_8_9; traffic_tm1_dst_in_case10_11_12, traffic_cm1_dst_in_case10_11_12];
+% 
+% traffic_tm1_src_out_case1_2_3 = (traffic_tm1_src_out(1) + traffic_tm1_src_out(2) + traffic_tm1_src_out(3))/3; 
+% traffic_tm1_src_out_case4_5_6 = (traffic_tm1_src_out(4) + traffic_tm1_src_out(5) + traffic_tm1_src_out(6))/3; 
+% traffic_tm1_src_out_case7_8_9 = (traffic_tm1_src_out(7) + traffic_tm1_src_out(8) + traffic_tm1_src_out(9))/3; 
+% traffic_tm1_src_out_case10_11_12 = (traffic_tm1_src_out(10) + traffic_tm1_src_out(11) + traffic_tm1_src_out(12))/3; 
+% 
+% traffic_cm1_out_case1_2_3 = (traffic_cm1_out(1) + traffic_cm1_out(2) + traffic_cm1_out(3))/3; 
+% traffic_cm1_out_case4_5_6 = (traffic_cm1_out(4) + traffic_cm1_out(5) + traffic_cm1_out(6))/3; 
+% traffic_cm1_out_case7_8_9 = (traffic_cm1_out(7) + traffic_cm1_out(8) + traffic_cm1_out(9))/3; 
+% traffic_cm1_out_case10_11_12 = (traffic_cm1_out(10) + traffic_cm1_out(11) + traffic_cm1_out(12))/3; 
+% 
+% traffic_out_sl = [traffic_tm1_src_out_case1_2_3, traffic_cm1_out_case1_2_3; traffic_tm1_src_out_case4_5_6, traffic_cm1_out_case4_5_6; traffic_tm1_src_out_case7_8_9, traffic_cm1_out_case7_8_9; traffic_tm1_src_out_case10_11_12, traffic_cm1_out_case10_11_12];
+% 
+% figure;
 % subplot(1,2,1)
-% h1 = cdfplot(latency_tm1(:,2));
-% hold on;
-% h2 = cdfplot(latency_cm1(:,2));
-% % h3 = cdfplot(latency_tsm1(:,2));
-% % h4 = cdfplot(latency_csm1(:,2));
-% 
-% set( h1,'LineStyle',':','LineWidth',3,'MarkerSize',5);
-% set( h2, 'LineStyle','-','LineWidth',3,'MarkerSize',5);
-% % set( h3, 'LineStyle','-','LineWidth',3,'MarkerSize',5);
-% % set( h4, 'LineStyle','-','LineWidth',3,'MarkerSize',5);
-% xlim([50 150]);
+% bar(traffic_in_sl);
+% title('(a) Traffic IN; Stateless Application','FontSize',20, 'FontWeight','bold');
+% xlabel('Layer Size (MB)');
+% ylabel('Incoming traffic/channel (KB/s)');
+% set(gca,'FontSize', 20, 'FontWeight','bold');
+% legend('TM-SL','SLIM-SL','Location','northwest');
+% set(gca, 'XTickLabel', {'0.01' '1' '10' '100'})
+% % dim = [0.15 0.3 0.3 0.3];
+% % str = {'BW (Mbps):','SRC-DST=942','SRC-Client=10','DST-Client=50','DST-N1=942','DST-N2=942','Load: SRC>DST'};
+% % annotation('textbox',dim,'String',str,'FitBoxToText','on');
 % grid minor;
-% xlabel('Response Time (ms)');
-% ylabel('CDF');
-% title('Application Response Time CDF')
-% set(gca,'FontSize',20, 'FontWeight','bold');
-% legend('Traditional SL','SLIM SL','Location','northwest');
-% 
-% % legend('Traditional SL','SLIM SL','Traditional SF','SLIM SF','Location','northwest');
 % 
 % subplot(1,2,2)
-% % h1 = cdfplot(latency_tm1(:,2));
-% % hold on;
-% % h2 = cdfplot(latency_cm1(:,2));
-% h3 = cdfplot(latency_tsm1(:,2));
-% hold on;
-% h4 = cdfplot(latency_csm1(:,2));
-% hold off;
-% 
-% set( h3,'LineStyle',':','LineWidth',3,'MarkerSize',5);
-% set( h4, 'LineStyle','-','LineWidth',3,'MarkerSize',5);
-% % set( h3, 'LineStyle','-','LineWidth',3,'MarkerSize',5);
-% % set( h4, 'LineStyle','-','LineWidth',3,'MarkerSize',5);
-% xlim([50 150]);
+% bar(traffic_out_sl);
+% title('(b) Traffic OUT; Stateless Application','FontSize',20, 'FontWeight','bold');
+% xlabel('Layer Size (MB)');
+% ylabel('Outgoing traffic/channel (KB/s)');
+% set(gca,'FontSize', 20, 'FontWeight','bold');
+% legend('TM-SL','SLIM-SL','Location','northwest');
+% set(gca, 'XTickLabel', {'0.01' '1' '10' '100'})
+% % dim = [0.15 0.3 0.3 0.3];
+% % str = {'BW (Mbps):','SRC-DST=942','SRC-Client=10','DST-Client=50','DST-N1=942','DST-N2=942','Load: SRC>DST'};
+% % annotation('textbox',dim,'String',str,'FitBoxToText','on');
 % grid minor;
-% xlabel('Response Time (ms)');
-% ylabel('CDF');
-% title('Application Response Time CDF')
-% set(gca,'FontSize',20, 'FontWeight','bold');
-% legend('Traditional SF','SLIM SF','Location','northwest');
+% 
+% 
+% %Stateful traffic plots
+% %no delay
+% traffic_tsm1_dst_in_case1_2_3 = (traffic_tsm1_dst_in(1) + traffic_tsm1_dst_in(2) + traffic_tsm1_dst_in(3))/3; 
+% traffic_tsm1_dst_in_case4_5_6 = (traffic_tsm1_dst_in(4) + traffic_tsm1_dst_in(5) + traffic_tsm1_dst_in(6))/3; 
+% traffic_tsm1_dst_in_case7_8_9 = (traffic_tsm1_dst_in(7) + traffic_tsm1_dst_in(8) + traffic_tsm1_dst_in(9))/3; 
+% traffic_tsm1_dst_in_case10_11_12 = (traffic_tsm1_dst_in(10) + traffic_tsm1_dst_in(11) + traffic_tsm1_dst_in(12))/3; 
+% 
+% traffic_csm1_dst_in_case1_2_3 = (traffic_csm1_dst_in(1) + traffic_csm1_dst_in(2) + traffic_csm1_dst_in(3))/3; 
+% traffic_csm1_dst_in_case4_5_6 = (traffic_csm1_dst_in(4) + traffic_csm1_dst_in(5) + traffic_csm1_dst_in(6))/3; 
+% traffic_csm1_dst_in_case7_8_9 = (traffic_csm1_dst_in(7) + traffic_csm1_dst_in(8) + traffic_csm1_dst_in(9))/3; 
+% traffic_csm1_dst_in_case10_11_12 = (traffic_csm1_dst_in(10) + traffic_csm1_dst_in(11) + traffic_csm1_dst_in(12))/3; 
+% 
+% traffic_in_sf = [traffic_tsm1_dst_in_case1_2_3, traffic_csm1_dst_in_case1_2_3; traffic_tsm1_dst_in_case4_5_6, traffic_csm1_dst_in_case4_5_6; traffic_tsm1_dst_in_case7_8_9, traffic_csm1_dst_in_case7_8_9; traffic_tsm1_dst_in_case10_11_12, traffic_csm1_dst_in_case10_11_12];
+% 
+% traffic_tsm1_src_out_case1_2_3 = (traffic_tsm1_src_out(1) + traffic_tsm1_src_out(2) + traffic_tsm1_src_out(3))/3; 
+% traffic_tsm1_src_out_case4_5_6 = (traffic_tsm1_src_out(4) + traffic_tsm1_src_out(5) + traffic_tsm1_src_out(6))/3; 
+% traffic_tsm1_src_out_case7_8_9 = (traffic_tsm1_src_out(7) + traffic_tsm1_src_out(8) + traffic_tsm1_src_out(9))/3; 
+% traffic_tsm1_src_out_case10_11_12 = (traffic_tsm1_src_out(10) + traffic_tsm1_src_out(11) + traffic_tsm1_src_out(12))/3; 
+% 
+% traffic_csm1_out_case1_2_3 = (traffic_csm1_out(1) + traffic_csm1_out(2) + traffic_csm1_out(3))/3; 
+% traffic_csm1_out_case4_5_6 = (traffic_csm1_out(4) + traffic_csm1_out(5) + traffic_csm1_out(6))/3; 
+% traffic_csm1_out_case7_8_9 = (traffic_csm1_out(7) + traffic_csm1_out(8) + traffic_csm1_out(9))/3; 
+% traffic_csm1_out_case10_11_12 = (traffic_csm1_out(10) + traffic_csm1_out(11) + traffic_csm1_out(12))/3; 
+% 
+% traffic_out_sf = [traffic_tsm1_src_out_case1_2_3, traffic_csm1_out_case1_2_3; traffic_tsm1_src_out_case4_5_6, traffic_csm1_out_case4_5_6; traffic_tsm1_src_out_case7_8_9, traffic_csm1_out_case7_8_9; traffic_tsm1_src_out_case10_11_12, traffic_csm1_out_case10_11_12];
+% 
+% figure;
+% subplot(1,2,1)
+% bar(traffic_in_sf);
+% title('(a) Traffic IN; Stateful Application','FontSize',20, 'FontWeight','bold');
+% xlabel('Volume Size (MB)');
+% ylabel('Incoming traffic/channel (KB/s)');
+% set(gca,'FontSize', 20, 'FontWeight','bold');
+% legend('TM-SF','SLIM-SF','Location','northwest');
+% set(gca, 'XTickLabel', {'0.01' '1' '10' '100'})
+% % dim = [0.15 0.3 0.3 0.3];
+% % str = {'BW (Mbps):','SRC-DST=942','SRC-Client=10','DST-Client=50','DST-N1=942','DST-N2=942','Load: SRC>DST'};
+% % annotation('textbox',dim,'String',str,'FitBoxToText','on');
+% grid minor;
+% 
+% subplot(1,2,2)
+% bar(traffic_out_sf);
+% title('(b) Traffic OUT; Stateful Application','FontSize',20, 'FontWeight','bold');
+% xlabel('Volume Size (MB)');
+% ylabel('Outgoing traffic/channel (KB/s)');
+% set(gca,'FontSize', 20, 'FontWeight','bold');
+% legend('TM-SF','SLIM-SF','Location','northwest');
+% set(gca, 'XTickLabel', {'0.01' '1' '10' '100'})
+% % dim = [0.15 0.3 0.3 0.3];
+% % str = {'BW (Mbps):','SRC-DST=942','SRC-Client=10','DST-Client=50','DST-N1=942','DST-N2=942','Load: SRC>DST'};
+% % annotation('textbox',dim,'String',str,'FitBoxToText','on');
+% grid minor;
 
 
-% figure
-% plot(1,1)
-% h1 = cdfplot(migr_time_tm1(:,2)./1000);
-% hold on;
-% h2 = cdfplot(migr_time_cm1(:,2)./1000);
-% h3 = cdfplot(migr_time_tsm1(:,2)./1000);
-% h4 = cdfplot(migr_time_csm1(:,2)./1000);
-% hold off;
-% 
-% set( h1,'LineStyle',':','LineWidth',3,'MarkerSize',5);
-% set( h2, 'LineStyle','-','LineWidth',3,'MarkerSize',5);
-% set( h3, 'LineStyle','-','LineWidth',3,'MarkerSize',5);
-% set( h4, 'LineStyle','-','LineWidth',3,'MarkerSize',5);
-% % xlim([50 150]);
-% grid minor;
-% xlabel('Migration Time (s)');
-% ylabel('CDF');
-% title('Migration Time CDF')
-% set(gca,'FontSize',20, 'FontWeight','bold');
-% legend('Traditional SL','SLIM SL','Location','northwest');
-% 
-% figure
-% plot(1,1)
-% h1 = cdfplot(migr_time_tm1(:,2)./1000);
-% h2 = cdfplot(migr_time_cm1(:,2)./1000);
-% h3 = cdfplot(migr_time_tsm2(:,2)/1000);
-% hold on;
-% h4 = cdfplot(migr_time_csm2(:,2)/1000);
-% set( h3,'LineStyle',':','LineWidth',3,'MarkerSize',5);
-% set( h4, 'LineStyle','-','LineWidth',3,'MarkerSize',5);
-% set( h3, 'LineStyle','-','LineWidth',3,'MarkerSize',5);
-% set( h4, 'LineStyle','-','LineWidth',3,'MarkerSize',5);
-% % xlim([50 150]);
-% grid minor;
-% xlabel('Migration Time (s)');
-% ylabel('CDF');
-% title('Migration Time CDF')
-% set(gca,'FontSize',20, 'FontWeight','bold');
-% legend('Traditional SF','SLIM SF','Location','northwest');
-% 
-% 
+%% OLD Plotting
 % load_cm1 = fopen('load_exp_cm_2-08-2020.txt','r');
 % load_cm1 = textscan(load_cm1,'%d %s %f %f %f %f %f %f %f %f %f');
 % 
@@ -619,5 +662,100 @@ clear all;
 % load_csm2_dst = load_csm2{8}(2:3:180);
 % load_tsm2_src = load_tsm2{8}(3:3:108);
 % load_csm2_src = load_csm2{8}(5:6:180);
+
+% latency_cm1 = dlmread('latency_exp_cm_2-08-2020.txt');
+% latency_cm2 = dlmread('latency_exp_cm_2-09-2020.txt');
+% latency_csm1 = dlmread('latency_exp_csm_2-07-2020.txt');
+% latency_csm2 = dlmread('latency_exp_csm_2-09-2020.txt');
+% latency_tm1 = dlmread('latency_exp_tm_2-09-2020.txt');
+% latency_tm2 = dlmread('latency_tm_sl_int_2020-02-09_00-31-39.txt');
+% latency_tsm1 = dlmread('latency_exp_tsm_2-08-2020.txt');
+% latency_tsm2 = dlmread('latency_exp_tsm_2-09-2020.txt');
+% 
+% figure
+% subplot(1,2,1)
+% h1 = cdfplot(latency_tm1(:,2));
+% hold on;
+% h2 = cdfplot(latency_cm1(:,2));
+% % h3 = cdfplot(latency_tsm1(:,2));
+% % h4 = cdfplot(latency_csm1(:,2));
+% 
+% set( h1,'LineStyle',':','LineWidth',3,'MarkerSize',5);
+% set( h2, 'LineStyle','-','LineWidth',3,'MarkerSize',5);
+% % set( h3, 'LineStyle','-','LineWidth',3,'MarkerSize',5);
+% % set( h4, 'LineStyle','-','LineWidth',3,'MarkerSize',5);
+% xlim([50 150]);
+% grid minor;
+% xlabel('Response Time (ms)');
+% ylabel('CDF');
+% title('Application Response Time CDF')
+% set(gca,'FontSize',20, 'FontWeight','bold');
+% legend('Traditional SL','SLIM SL','Location','northwest');
+% 
+% % legend('Traditional SL','SLIM SL','Traditional SF','SLIM SF','Location','northwest');
+% 
+% subplot(1,2,2)
+% % h1 = cdfplot(latency_tm1(:,2));
+% % hold on;
+% % h2 = cdfplot(latency_cm1(:,2));
+% h3 = cdfplot(latency_tsm1(:,2));
+% hold on;
+% h4 = cdfplot(latency_csm1(:,2));
+% hold off;
+% 
+% set( h3,'LineStyle',':','LineWidth',3,'MarkerSize',5);
+% set( h4, 'LineStyle','-','LineWidth',3,'MarkerSize',5);
+% % set( h3, 'LineStyle','-','LineWidth',3,'MarkerSize',5);
+% % set( h4, 'LineStyle','-','LineWidth',3,'MarkerSize',5);
+% xlim([50 150]);
+% grid minor;
+% xlabel('Response Time (ms)');
+% ylabel('CDF');
+% title('Application Response Time CDF')
+% set(gca,'FontSize',20, 'FontWeight','bold');
+% legend('Traditional SF','SLIM SF','Location','northwest');
+
+
+% figure
+% plot(1,1)
+% h1 = cdfplot(migr_time_tm1(:,2)./1000);
+% hold on;
+% h2 = cdfplot(migr_time_cm1(:,2)./1000);
+% h3 = cdfplot(migr_time_tsm1(:,2)./1000);
+% h4 = cdfplot(migr_time_csm1(:,2)./1000);
+% hold off;
+% 
+% set( h1,'LineStyle',':','LineWidth',3,'MarkerSize',5);
+% set( h2, 'LineStyle','-','LineWidth',3,'MarkerSize',5);
+% set( h3, 'LineStyle','-','LineWidth',3,'MarkerSize',5);
+% set( h4, 'LineStyle','-','LineWidth',3,'MarkerSize',5);
+% % xlim([50 150]);
+% grid minor;
+% xlabel('Migration Time (s)');
+% ylabel('CDF');
+% title('Migration Time CDF')
+% set(gca,'FontSize',20, 'FontWeight','bold');
+% legend('Traditional SL','SLIM SL','Location','northwest');
+% 
+% figure
+% plot(1,1)
+% h1 = cdfplot(migr_time_tm1(:,2)./1000);
+% h2 = cdfplot(migr_time_cm1(:,2)./1000);
+% h3 = cdfplot(migr_time_tsm2(:,2)/1000);
+% hold on;
+% h4 = cdfplot(migr_time_csm2(:,2)/1000);
+% set( h3,'LineStyle',':','LineWidth',3,'MarkerSize',5);
+% set( h4, 'LineStyle','-','LineWidth',3,'MarkerSize',5);
+% set( h3, 'LineStyle','-','LineWidth',3,'MarkerSize',5);
+% set( h4, 'LineStyle','-','LineWidth',3,'MarkerSize',5);
+% % xlim([50 150]);
+% grid minor;
+% xlabel('Migration Time (s)');
+% ylabel('CDF');
+% title('Migration Time CDF')
+% set(gca,'FontSize',20, 'FontWeight','bold');
+% legend('Traditional SF','SLIM SF','Location','northwest');
+% 
+
 % 
 % 
