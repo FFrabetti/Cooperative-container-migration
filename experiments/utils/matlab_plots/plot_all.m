@@ -460,6 +460,84 @@ clear all;
 % grid minor;
 
 
+%% Latency Plots
+ for k=1:36
+    latency_tm_before{k}=dlmread(sprintf('tm1_latency/before_trafficgencl.log.%d.txt',k-1));
+    latency_tm_after{k}=dlmread(sprintf('tm1_latency/after_trafficgencl.log.%d.txt',k-1));
+    latency_cm_before{k}=dlmread(sprintf('cm1_latency/before_trafficgencl.log.%d.txt',k-1));
+    latency_cm_after{k}=dlmread(sprintf('cm1_latency/after_trafficgencl.log.%d.txt',k-1));
+    latency_tsm_before{k}=dlmread(sprintf('tsm1_latency/before_trafficgencl.log.%d.txt',k-1));
+    latency_tsm_after{k}=dlmread(sprintf('tsm1_latency/after_trafficgencl.log.%d.txt',k-1));
+    latency_csm_before{k}=dlmread(sprintf('csm1_latency/before_trafficgencl.log.%d.txt',k-1));
+    latency_csm_after{k}=dlmread(sprintf('csm1_latency/after_trafficgencl.log.%d.txt',k-1));
+ end
+
+%Compare latency CDF for load src>dst
+latency_tm_case1_4_7_10 = [latency_tm_before{1}(:,2)' latency_tm_before{4}(:,2)' latency_tm_before{7}(:,2)' latency_tm_before{10}(:,2)'];
+latency_cm_case1_4_7_10 = [latency_cm_before{1}(:,2)' latency_cm_before{4}(:,2)' latency_cm_before{7}(:,2)' latency_cm_before{10}(:,2)'];
+latency_tsm_case1_4_7_10 = [latency_tsm_before{1}(:,2)' latency_tsm_before{4}(:,2)' latency_tsm_before{7}(:,2)' latency_tsm_before{10}(:,2)'];
+latency_csm_case1_4_7_10 = [latency_csm_before{1}(:,2)' latency_csm_before{4}(:,2)' latency_csm_before{7}(:,2)' latency_csm_before{10}(:,2)'];
+
+figure;
+h1 = cdfplot(latency_tm_case1_4_7_10);
+hold on;
+h2 = cdfplot(latency_cm_case1_4_7_10);
+set( h1,'LineStyle',':','LineWidth',3,'MarkerSize',5);
+set( h2, 'LineStyle','-','LineWidth',3,'MarkerSize',5);
+grid minor;
+xlabel('Application Latency (ms)');
+ylabel('CDF');
+title('Stateless Applicaiton; Load SRC > DST')
+set(gca,'FontSize',20, 'FontWeight','bold');
+legend('TM-SL','SLIM-SL','Location','northwest');
+
+
+figure;
+h1 = cdfplot(latency_tsm_case1_4_7_10);
+hold on;
+h2 = cdfplot(latency_csm_case1_4_7_10);
+set( h1,'LineStyle',':','LineWidth',3,'MarkerSize',5);
+set( h2, 'LineStyle','-','LineWidth',3,'MarkerSize',5);
+grid minor;
+xlabel('Application Latency (ms)');
+ylabel('CDF');
+title('Stateful Applicaiton; Load SRC > DST')
+set(gca,'FontSize',20, 'FontWeight','bold');
+legend('TM-SF','SLIM-SF','Location','northwest');
+
+%Compare latency CDF for load src<dst
+latency_tm_case2_5_8_11 = [latency_tm_before{2}(:,2)' latency_tm_before{5}(:,2)' latency_tm_before{8}(:,2)' latency_tm_before{11}(:,2)'];
+latency_cm_case2_5_8_11 = [latency_cm_before{2}(:,2)' latency_cm_before{5}(:,2)' latency_cm_before{8}(:,2)' latency_cm_before{11}(:,2)'];
+latency_tsm_case2_5_8_11 = [latency_tsm_before{2}(:,2)' latency_tsm_before{5}(:,2)' latency_tsm_before{8}(:,2)' latency_tsm_before{11}(:,2)'];
+latency_csm_case2_5_8_11 = [latency_csm_before{2}(:,2)' latency_csm_before{5}(:,2)' latency_csm_before{8}(:,2)' latency_csm_before{11}(:,2)'];
+
+figure;
+h1 = cdfplot(latency_tm_case2_5_8_11);
+hold on;
+h2 = cdfplot(latency_cm_case2_5_8_11);
+set( h1,'LineStyle',':','LineWidth',3,'MarkerSize',5);
+set( h2, 'LineStyle','-','LineWidth',3,'MarkerSize',5);
+grid minor;
+xlabel('Application Latency (ms)');
+ylabel('CDF');
+title('Stateless Applicaiton; Load SRC<DST')
+set(gca,'FontSize',20, 'FontWeight','bold');
+legend('TM-SL','SLIM-SL','Location','northwest');
+
+figure;
+h1 = cdfplot(latency_tsm_case2_5_8_11);
+hold on;
+h2 = cdfplot(latency_csm_case2_5_8_11);
+set( h1,'LineStyle',':','LineWidth',3,'MarkerSize',5);
+set( h2, 'LineStyle','-','LineWidth',3,'MarkerSize',5);
+grid minor;
+xlabel('Application Latency (ms)');
+ylabel('CDF');
+title('Stateful Applicaiton; Load SRC<DST')
+set(gca,'FontSize',20, 'FontWeight','bold');
+legend('TM-SF','SLIM-SF','Location','northwest');
+
+
 %% OLD Plotting
 % load_cm1 = fopen('load_exp_cm_2-08-2020.txt','r');
 % load_cm1 = textscan(load_cm1,'%d %s %f %f %f %f %f %f %f %f %f');
