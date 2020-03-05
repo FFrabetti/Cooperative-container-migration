@@ -1,8 +1,7 @@
 clc;
 clear all;
 
-%%Migration Time
-
+% %% Migration Time
 % migr_time_tm1 = dlmread('migrtime_tm1.txt');
 % migr_time_cm1 = dlmread('migrtime_cm1.txt');
 % migr_time_tsm1 = dlmread('migrtime_tsm4.txt');
@@ -42,8 +41,8 @@ clear all;
 % xlabel('Layer Size (MB)');
 % ylabel('Average Migraiton Time (s)');
 % set(gca,'FontSize', 20, 'FontWeight','bold');
-% legend('TM-SL','SLIM-SL','Location','northwest');
-% set(gca, 'XTickLabel', {'0.01' '1' '10' '100'})
+% legend('TM-SL','CM-SL','Location','northwest');
+% set(gca, 'XTickLabel', {'0.1' '1' '10' '100'})
 % %dim = [0.75 0.3 0.3 0.3];
 % %str = {'BW (Mbps):','SRC-DST=100','SRC-Client=10','DST-Client=50','DST-N1=942','DST-N2=942','Load: SRC>DST'};
 % %annotation('textbox',dim,'String',str,'FitBoxToText','on');
@@ -52,11 +51,11 @@ clear all;
 % subplot(1,2,2)
 % bar(migr_time_sf/1000);
 % title('(a) Stateful Application','FontSize',20, 'FontWeight','bold');
-% xlabel('Layer Size (MB)');
+% xlabel('Volume Size (MB)');
 % ylabel('Average Migraiton Time (s)');
 % set(gca,'FontSize', 20, 'FontWeight','bold');
-% legend('TM-SF','SLIM-SF','Location','northwest');
-% set(gca, 'XTickLabel', {'0.01' '1' '10' '100'})
+% legend('TM-SF','CM-SF','Location','northwest');
+% set(gca, 'XTickLabel', {'0.1' '1' '10' '100'})
 % %dim = [0.75 0.3 0.3 0.3];
 % %str = {'BW (Mbps):','SRC-DST=100','SRC-Client=10','DST-Client=50','DST-N1=942','DST-N2=942','Load: SRC>DST'};
 % %annotation('textbox',dim,'String',str,'FitBoxToText','on');
@@ -75,7 +74,7 @@ clear all;
 % ylabel('CDF');
 % title('Stateless, Layer Size=100MB, Load SRC>DST')
 % set(gca,'FontSize',20, 'FontWeight','bold');
-% legend('TM-SL','SLIM-SL','Location','northwest');
+% legend('TM-SL','CM-SL','Location','northwest');
 % 
 % figure;
 % h1 = cdfplot(migr_time_tm1(11:3:36,2)/1000); 
@@ -89,7 +88,7 @@ clear all;
 % ylabel('CDF');
 % title('Stateless, Layer Size=100MB, Load SRC<DST')
 % set(gca,'FontSize',20, 'FontWeight','bold');
-% legend('TM-SL','SLIM-SL','Location','northwest');
+% legend('TM-SL','CM-SL','Location','northwest');
 % 
 % figure;
 % h1 = cdfplot(migr_time_tsm1(10:3:36,2)/1000); 
@@ -101,9 +100,9 @@ clear all;
 % grid minor;
 % xlabel('Migration Time (s)');
 % ylabel('CDF');
-% title('Stateful, Layer Size=100MB, Load SRC>DST')
+% title('Stateful, Volume Size=100MB, Load SRC>DST')
 % set(gca,'FontSize',20, 'FontWeight','bold');
-% legend('TM-SF','SLIM-SF','Location','northwest');
+% legend('TM-SF','CM-SF','Location','northwest');
 % 
 % figure;
 % h1 = cdfplot(migr_time_tsm1(11:3:36,2)/1000); 
@@ -115,11 +114,11 @@ clear all;
 % grid minor;
 % xlabel('Migration Time (s)');
 % ylabel('CDF');
-% title('Stateful, Layer Size=100MB, Load SRC<DST')
+% title('Stateful, Volume Size=100MB, Load SRC<DST')
 % set(gca,'FontSize',20, 'FontWeight','bold');
-% legend('TM-SF','SLIM-SF','Location','northwest');
+% legend('TM-SF','CM-SF','Location','northwest');
 
-
+% 
 % %% Load Plots
 % load_tm1 = fopen('load_tm1.txt','r');
 % load_tm1 = textscan(load_tm1,'%d %s %f %f %f %f %f %f %f %f %f');
@@ -159,8 +158,8 @@ clear all;
 % xlabel('Layer Size (MB)');
 % ylabel('Avg. SRC Load');
 % set(gca,'FontSize', 20, 'FontWeight','bold');
-% legend('TM-SL','SLIM-SL','Location','northwest');
-% set(gca, 'XTickLabel', {'0.01' '1' '10' '100'})
+% legend('TM-SL','CM-SL','Location','northwest');
+% set(gca, 'XTickLabel', {'0.1' '1' '10' '100'})
 % % dim = [0.15 0.3 0.3 0.3];
 % % str = {'BW (Mbps):','SRC-DST=942','SRC-Client=10','DST-Client=50','DST-N1=942','DST-N2=942','Load: SRC>DST'};
 % % annotation('textbox',dim,'String',str,'FitBoxToText','on');
@@ -171,8 +170,8 @@ clear all;
 % xlabel('Layer Size (MB)');
 % ylabel('Avg. SRC Load');
 % set(gca,'FontSize', 20, 'FontWeight','bold');
-% legend('TM-SL','SLIM-SL','Location','northwest');
-% set(gca, 'XTickLabel', {'0.01' '1' '10' '100'})
+% legend('TM-SL','CM-SL','Location','northwest');
+% set(gca, 'XTickLabel', {'0.1' '1' '10' '100'})
 % % dim = [0.45 0.3 0.3 0.3];
 % % str = {'BW (Mbps):','SRC-DST=100','SRC-Client=10','DST-Client=50','DST-N1=942','DST-N2=942','Load: SRC>DST'};
 % % annotation('textbox',dim,'String',str,'FitBoxToText','on');
@@ -183,8 +182,8 @@ clear all;
 % xlabel('Layer Size (MB)');
 % ylabel('Avg. SRC Load');
 % set(gca,'FontSize', 20, 'FontWeight','bold');
-% legend('TM-SL','SLIM-SL','Location','northwest');
-% set(gca, 'XTickLabel', {'0.01' '1' '10' '100'})
+% legend('TM-SL','CM-SL','Location','northwest');
+% set(gca, 'XTickLabel', {'0.1' '1' '10' '100'})
 % % dim = [0.75 0.3 0.3 0.3];
 % % str = {'BW (Mbps):','SRC-DST=100','SRC-Client=10','DST-Client=50','DST-N1=942','DST-N2=942','Load: SRC>DST'};
 % % annotation('textbox',dim,'String',str,'FitBoxToText','on');
@@ -200,8 +199,8 @@ clear all;
 % xlabel('Layer Size (MB)');
 % ylabel('Avg. DST Load');
 % set(gca,'FontSize', 20, 'FontWeight','bold');
-% legend('TM-SL','SLIM-SL','Location','northwest');
-% set(gca, 'XTickLabel', {'0.01' '1' '10' '100'})
+% legend('TM-SL','CM-SL','Location','northwest');
+% set(gca, 'XTickLabel', {'0.1' '1' '10' '100'})
 % % dim = [0.15 0.3 0.3 0.3];
 % % str = {'BW (Mbps):','dst-DST=942','dst-Client=10','DST-Client=50','DST-N1=942','DST-N2=942','Load: dst>DST'};
 % % annotation('textbox',dim,'String',str,'FitBoxToText','on');
@@ -212,8 +211,8 @@ clear all;
 % xlabel('Layer Size (MB)');
 % ylabel('Avg. DST Load');
 % set(gca,'FontSize', 20, 'FontWeight','bold');
-% legend('TM-SL','SLIM-SL','Location','northwest');
-% set(gca, 'XTickLabel', {'0.01' '1' '10' '100'})
+% legend('TM-SL','CM-SL','Location','northwest');
+% set(gca, 'XTickLabel', {'0.1' '1' '10' '100'})
 % % dim = [0.45 0.3 0.3 0.3];
 % % str = {'BW (Mbps):','dst-DST=100','dst-Client=10','DST-Client=50','DST-N1=942','DST-N2=942','Load: dst>DST'};
 % % annotation('textbox',dim,'String',str,'FitBoxToText','on');
@@ -224,8 +223,8 @@ clear all;
 % xlabel('Layer Size (MB)');
 % ylabel('Avg. DST Load');
 % set(gca,'FontSize', 20, 'FontWeight','bold');
-% legend('TM-SL','SLIM-SL','Location','northwest');
-% set(gca, 'XTickLabel', {'0.01' '1' '10' '100'})
+% legend('TM-SL','CM-SL','Location','northwest');
+% set(gca, 'XTickLabel', {'0.1' '1' '10' '100'})
 % % dim = [0.75 0.3 0.3 0.3];
 % % str = {'BW (Mbps):','dst-DST=100','dst-Client=10','DST-Client=50','DST-N1=942','DST-N2=942','Load: dst>DST'};
 % % annotation('textbox',dim,'String',str,'FitBoxToText','on');
@@ -245,11 +244,11 @@ clear all;
 % xlabel('Volume Size (MB)');
 % ylabel('Avg. SRC Load');
 % set(gca,'FontSize', 20, 'FontWeight','bold');
-% legend('TM-SF','SLIM-SF','Location','northwest');
-% set(gca, 'XTickLabel', {'0.01' '1' '10' '100'})
-% dim = [0.15 0.3 0.3 0.3];
-% str = {'BW (Mbps):','SRC-DST=942','SRC-Client=10','DST-Client=50','DST-N1=942','DST-N2=942','Load: SRC>DST'};
-% annotation('textbox',dim,'String',str,'FitBoxToText','on');
+% legend('TM-SF','CM-SF','Location','northwest');
+% set(gca, 'XTickLabel', {'0.1' '1' '10' '100'})
+% % dim = [0.15 0.3 0.3 0.3];
+% % str = {'BW (Mbps):','SRC-DST=942','SRC-Client=10','DST-Client=50','DST-N1=942','DST-N2=942','Load: SRC>DST'};
+% % annotation('textbox',dim,'String',str,'FitBoxToText','on');
 % grid minor;
 % subplot(2,3,2)
 % bar((100-load_src_sf_case2_5_8_11)./100);
@@ -257,11 +256,11 @@ clear all;
 % xlabel('Volume Size (MB)');
 % ylabel('Avg. SRC Load');
 % set(gca,'FontSize', 20, 'FontWeight','bold');
-% legend('TM-SF','SLIM-SF','Location','northwest');
-% set(gca, 'XTickLabel', {'0.01' '1' '10' '100'})
-% dim = [0.45 0.3 0.3 0.3];
-% str = {'BW (Mbps):','SRC-DST=100','SRC-Client=10','DST-Client=50','DST-N1=942','DST-N2=942','Load: SRC>DST'};
-% annotation('textbox',dim,'String',str,'FitBoxToText','on');
+% legend('TM-SF','CM-SF','Location','northwest');
+% set(gca, 'XTickLabel', {'0.1' '1' '10' '100'})
+% % dim = [0.45 0.3 0.3 0.3];
+% % str = {'BW (Mbps):','SRC-DST=100','SRC-Client=10','DST-Client=50','DST-N1=942','DST-N2=942','Load: SRC>DST'};
+% % annotation('textbox',dim,'String',str,'FitBoxToText','on');
 % grid minor;
 % subplot(2,3,3)
 % bar((100-load_src_sf_case3_6_9_12)./100);
@@ -269,11 +268,11 @@ clear all;
 % xlabel('Volume Size (MB)');
 % ylabel('Avg. SRC Load');
 % set(gca,'FontSize', 20, 'FontWeight','bold');
-% legend('TM-SF','SLIM-SF','Location','northwest');
-% set(gca, 'XTickLabel', {'0.01' '1' '10' '100'})
-% dim = [0.75 0.3 0.3 0.3];
-% str = {'BW (Mbps):','SRC-DST=100','SRC-Client=10','DST-Client=50','DST-N1=942','DST-N2=942','Load: SRC>DST'};
-% annotation('textbox',dim,'String',str,'FitBoxToText','on');
+% legend('TM-SF','CM-SF','Location','northwest');
+% set(gca, 'XTickLabel', {'0.1' '1' '10' '100'})
+% % dim = [0.75 0.3 0.3 0.3];
+% % str = {'BW (Mbps):','SRC-DST=100','SRC-Client=10','DST-Client=50','DST-N1=942','DST-N2=942','Load: SRC>DST'};
+% % annotation('textbox',dim,'String',str,'FitBoxToText','on');
 % grid minor;
 % 
 % load_dst_sf_case1_4_7_10 = [load_tsm1_dst(1), load_csm1_dst(1); load_tsm1_dst(4), load_csm1_dst(4); load_tsm1_dst(7), load_csm1_dst(7); load_tsm1_dst(10), load_csm1_dst(10)];
@@ -286,11 +285,11 @@ clear all;
 % xlabel('Volume Size (MB)');
 % ylabel('Avg. DST Load');
 % set(gca,'FontSize', 20, 'FontWeight','bold');
-% legend('TM-SF','SLIM-SF','Location','northwest');
-% set(gca, 'XTickLabel', {'0.01' '1' '10' '100'})
-% dim = [0.15 0.3 0.3 0.3];
-% str = {'BW (Mbps):','dst-DST=942','dst-Client=10','DST-Client=50','DST-N1=942','DST-N2=942','Load: dst>DST'};
-% annotation('textbox',dim,'String',str,'FitBoxToText','on');
+% legend('TM-SF','CM-SF','Location','northwest');
+% set(gca, 'XTickLabel', {'0.1' '1' '10' '100'})
+% % dim = [0.15 0.3 0.3 0.3];
+% % str = {'BW (Mbps):','dst-DST=942','dst-Client=10','DST-Client=50','DST-N1=942','DST-N2=942','Load: dst>DST'};
+% % annotation('textbox',dim,'String',str,'FitBoxToText','on');
 % grid minor;
 % subplot(2,3,5)
 % bar((100-load_dst_sf_case2_5_8_11)./100);
@@ -298,11 +297,11 @@ clear all;
 % xlabel('Volume Size (MB)');
 % ylabel('Avg. DST Load');
 % set(gca,'FontSize', 20, 'FontWeight','bold');
-% legend('TM-SF','SLIM-SF','Location','northwest');
-% set(gca, 'XTickLabel', {'0.01' '1' '10' '100'})
-% dim = [0.45 0.3 0.3 0.3];
-% str = {'BW (Mbps):','dst-DST=100','dst-Client=10','DST-Client=50','DST-N1=942','DST-N2=942','Load: dst>DST'};
-% annotation('textbox',dim,'String',str,'FitBoxToText','on');
+% legend('TM-SF','CM-SF','Location','northwest');
+% set(gca, 'XTickLabel', {'0.1' '1' '10' '100'})
+% % dim = [0.45 0.3 0.3 0.3];
+% % str = {'BW (Mbps):','dst-DST=100','dst-Client=10','DST-Client=50','DST-N1=942','DST-N2=942','Load: dst>DST'};
+% % annotation('textbox',dim,'String',str,'FitBoxToText','on');
 % grid minor;
 % subplot(2,3,6)
 % bar((100-load_dst_sf_case3_6_9_12)./100);
@@ -310,74 +309,74 @@ clear all;
 % xlabel('Volume Size (MB)');
 % ylabel('Avg. DST Load');
 % set(gca,'FontSize', 20, 'FontWeight','bold');
-% legend('TM-SF','SLIM-SF','Location','northwest');
-% set(gca, 'XTickLabel', {'0.01' '1' '10' '100'})
-% dim = [0.75 0.3 0.3 0.3];
-% str = {'BW (Mbps):','dst-DST=100','dst-Client=10','DST-Client=50','DST-N1=942','DST-N2=942','Load: dst>DST'};
-% annotation('textbox',dim,'String',str,'FitBoxToText','on');
+% legend('TM-SF','CM-SF','Location','northwest');
+% set(gca, 'XTickLabel', {'0.1' '1' '10' '100'})
+% % dim = [0.75 0.3 0.3 0.3];
+% % str = {'BW (Mbps):','dst-DST=100','dst-Client=10','DST-Client=50','DST-N1=942','DST-N2=942','Load: dst>DST'};
+% % annotation('textbox',dim,'String',str,'FitBoxToText','on');
 % grid minor;
 
 %% Traffic Plots
-% traffic_tm1 = fopen('traffic_tm1.txt','r');
-% traffic_tm1 = textscan(traffic_tm1,'%d %s %f %f %f %f %f %f');
-% 
-% traffic_cm1 = fopen('traffic_cm1.txt','r');
-% traffic_cm1 = textscan(traffic_cm1,'%d %s %f %f %f %f %f %f');
-% 
-% 
-% traffic_tsm1 = fopen('traffic_tsm4.txt','r');
-% traffic_tsm1 = textscan(traffic_tsm1,'%d %s %f %f %f %f %f %f');
-% 
-% traffic_csm1 = fopen('traffic_csm4.txt','r');
-% traffic_csm1 = textscan(traffic_csm1,'%d %s %f %f %f %f %f %f');
-% 
-% % Traffic In and Out
-% traffic_tm1_dst_in = traffic_tm1{8}(3:6:216);
-% traffic_cm1_dst_in = traffic_cm1{8}(3:10:360);
-% 
-% traffic_tm1_src_out = traffic_tm1{8}(6:6:216);
-% traffic_cm1_src_out = traffic_cm1{8}(10:10:360);
-% traffic_cm1_n1_out = traffic_cm1{8}(6:10:360);
-% traffic_cm1_n2_out = traffic_cm1{8}(8:10:360);
-% 
-% traffic_cm1_out = (traffic_cm1_src_out + traffic_cm1_n1_out + traffic_cm1_n2_out)/3;
-% 
-% traffic_tsm1_dst_in = traffic_tsm1{8}(3:6:216);
-% traffic_csm1_dst_in = traffic_csm1{8}(3:10:360);
-% 
-% traffic_tsm1_src_out = traffic_tsm1{8}(6:6:216);
-% traffic_csm1_src_out = traffic_csm1{8}(10:10:360);
-% traffic_csm1_n1_out = traffic_csm1{8}(6:10:360);
-% traffic_csm1_n2_out = traffic_csm1{8}(8:10:360);
-% 
-% traffic_csm1_out = (traffic_csm1_src_out + traffic_csm1_n1_out + traffic_csm1_n2_out)/3;
-% 
-% %Stateless traffic plots
-% %no delay
-% traffic_tm1_dst_in_case1_2_3 = (traffic_tm1_dst_in(1) + traffic_tm1_dst_in(2) + traffic_tm1_dst_in(3))/3; 
-% traffic_tm1_dst_in_case4_5_6 = (traffic_tm1_dst_in(4) + traffic_tm1_dst_in(5) + traffic_tm1_dst_in(6))/3; 
-% traffic_tm1_dst_in_case7_8_9 = (traffic_tm1_dst_in(7) + traffic_tm1_dst_in(8) + traffic_tm1_dst_in(9))/3; 
-% traffic_tm1_dst_in_case10_11_12 = (traffic_tm1_dst_in(10) + traffic_tm1_dst_in(11) + traffic_tm1_dst_in(12))/3; 
-% 
-% traffic_cm1_dst_in_case1_2_3 = (traffic_cm1_dst_in(1) + traffic_cm1_dst_in(2) + traffic_cm1_dst_in(3))/3; 
-% traffic_cm1_dst_in_case4_5_6 = (traffic_cm1_dst_in(4) + traffic_cm1_dst_in(5) + traffic_cm1_dst_in(6))/3; 
-% traffic_cm1_dst_in_case7_8_9 = (traffic_cm1_dst_in(7) + traffic_cm1_dst_in(8) + traffic_cm1_dst_in(9))/3; 
-% traffic_cm1_dst_in_case10_11_12 = (traffic_cm1_dst_in(10) + traffic_cm1_dst_in(11) + traffic_cm1_dst_in(12))/3; 
-% 
-% traffic_in_sl = [traffic_tm1_dst_in_case1_2_3, traffic_cm1_dst_in_case1_2_3; traffic_tm1_dst_in_case4_5_6, traffic_cm1_dst_in_case4_5_6; traffic_tm1_dst_in_case7_8_9, traffic_cm1_dst_in_case7_8_9; traffic_tm1_dst_in_case10_11_12, traffic_cm1_dst_in_case10_11_12];
-% 
-% traffic_tm1_src_out_case1_2_3 = (traffic_tm1_src_out(1) + traffic_tm1_src_out(2) + traffic_tm1_src_out(3))/3; 
-% traffic_tm1_src_out_case4_5_6 = (traffic_tm1_src_out(4) + traffic_tm1_src_out(5) + traffic_tm1_src_out(6))/3; 
-% traffic_tm1_src_out_case7_8_9 = (traffic_tm1_src_out(7) + traffic_tm1_src_out(8) + traffic_tm1_src_out(9))/3; 
-% traffic_tm1_src_out_case10_11_12 = (traffic_tm1_src_out(10) + traffic_tm1_src_out(11) + traffic_tm1_src_out(12))/3; 
-% 
-% traffic_cm1_out_case1_2_3 = (traffic_cm1_out(1) + traffic_cm1_out(2) + traffic_cm1_out(3))/3; 
-% traffic_cm1_out_case4_5_6 = (traffic_cm1_out(4) + traffic_cm1_out(5) + traffic_cm1_out(6))/3; 
-% traffic_cm1_out_case7_8_9 = (traffic_cm1_out(7) + traffic_cm1_out(8) + traffic_cm1_out(9))/3; 
-% traffic_cm1_out_case10_11_12 = (traffic_cm1_out(10) + traffic_cm1_out(11) + traffic_cm1_out(12))/3; 
-% 
-% traffic_out_sl = [traffic_tm1_src_out_case1_2_3, traffic_cm1_out_case1_2_3; traffic_tm1_src_out_case4_5_6, traffic_cm1_out_case4_5_6; traffic_tm1_src_out_case7_8_9, traffic_cm1_out_case7_8_9; traffic_tm1_src_out_case10_11_12, traffic_cm1_out_case10_11_12];
-% 
+traffic_tm1 = fopen('traffic_tm1.txt','r');
+traffic_tm1 = textscan(traffic_tm1,'%d %s %f %f %f %f %f %f');
+
+traffic_cm1 = fopen('traffic_cm1.txt','r');
+traffic_cm1 = textscan(traffic_cm1,'%d %s %f %f %f %f %f %f');
+
+
+traffic_tsm1 = fopen('traffic_tsm4.txt','r');
+traffic_tsm1 = textscan(traffic_tsm1,'%d %s %f %f %f %f %f %f');
+
+traffic_csm1 = fopen('traffic_csm4.txt','r');
+traffic_csm1 = textscan(traffic_csm1,'%d %s %f %f %f %f %f %f');
+
+% Traffic In and Out
+traffic_tm1_dst_in = traffic_tm1{8}(3:6:216);
+traffic_cm1_dst_in = traffic_cm1{8}(3:10:360);
+
+traffic_tm1_src_out = traffic_tm1{8}(6:6:216);
+traffic_cm1_src_out = traffic_cm1{8}(10:10:360);
+traffic_cm1_n1_out = traffic_cm1{8}(6:10:360);
+traffic_cm1_n2_out = traffic_cm1{8}(8:10:360);
+
+traffic_cm1_out = (traffic_cm1_src_out + traffic_cm1_n1_out + traffic_cm1_n2_out)/3;
+
+traffic_tsm1_dst_in = traffic_tsm1{8}(3:6:216);
+traffic_csm1_dst_in = traffic_csm1{8}(3:10:360);
+
+traffic_tsm1_src_out = traffic_tsm1{8}(6:6:216);
+traffic_csm1_src_out = traffic_csm1{8}(10:10:360);
+traffic_csm1_n1_out = traffic_csm1{8}(6:10:360);
+traffic_csm1_n2_out = traffic_csm1{8}(8:10:360);
+
+traffic_csm1_out = (traffic_csm1_src_out + traffic_csm1_n1_out + traffic_csm1_n2_out)/3;
+
+%Stateless traffic plots
+%no delay
+traffic_tm1_dst_in_case1_2_3 = (traffic_tm1_dst_in(1) + traffic_tm1_dst_in(2) + traffic_tm1_dst_in(3))/3; 
+traffic_tm1_dst_in_case4_5_6 = (traffic_tm1_dst_in(4) + traffic_tm1_dst_in(5) + traffic_tm1_dst_in(6))/3; 
+traffic_tm1_dst_in_case7_8_9 = (traffic_tm1_dst_in(7) + traffic_tm1_dst_in(8) + traffic_tm1_dst_in(9))/3; 
+traffic_tm1_dst_in_case10_11_12 = (traffic_tm1_dst_in(10) + traffic_tm1_dst_in(11) + traffic_tm1_dst_in(12))/3; 
+
+traffic_cm1_dst_in_case1_2_3 = (traffic_cm1_dst_in(1) + traffic_cm1_dst_in(2) + traffic_cm1_dst_in(3))/3; 
+traffic_cm1_dst_in_case4_5_6 = (traffic_cm1_dst_in(4) + traffic_cm1_dst_in(5) + traffic_cm1_dst_in(6))/3; 
+traffic_cm1_dst_in_case7_8_9 = (traffic_cm1_dst_in(7) + traffic_cm1_dst_in(8) + traffic_cm1_dst_in(9))/3; 
+traffic_cm1_dst_in_case10_11_12 = (traffic_cm1_dst_in(10) + traffic_cm1_dst_in(11) + traffic_cm1_dst_in(12))/3; 
+
+traffic_in_sl = [traffic_tm1_dst_in_case1_2_3, traffic_cm1_dst_in_case1_2_3; traffic_tm1_dst_in_case4_5_6, traffic_cm1_dst_in_case4_5_6; traffic_tm1_dst_in_case7_8_9, traffic_cm1_dst_in_case7_8_9; traffic_tm1_dst_in_case10_11_12, traffic_cm1_dst_in_case10_11_12];
+
+traffic_tm1_src_out_case1_2_3 = (traffic_tm1_src_out(1) + traffic_tm1_src_out(2) + traffic_tm1_src_out(3))/3; 
+traffic_tm1_src_out_case4_5_6 = (traffic_tm1_src_out(4) + traffic_tm1_src_out(5) + traffic_tm1_src_out(6))/3; 
+traffic_tm1_src_out_case7_8_9 = (traffic_tm1_src_out(7) + traffic_tm1_src_out(8) + traffic_tm1_src_out(9))/3; 
+traffic_tm1_src_out_case10_11_12 = (traffic_tm1_src_out(10) + traffic_tm1_src_out(11) + traffic_tm1_src_out(12))/3; 
+
+traffic_cm1_out_case1_2_3 = (traffic_cm1_out(1) + traffic_cm1_out(2) + traffic_cm1_out(3))/3; 
+traffic_cm1_out_case4_5_6 = (traffic_cm1_out(4) + traffic_cm1_out(5) + traffic_cm1_out(6))/3; 
+traffic_cm1_out_case7_8_9 = (traffic_cm1_out(7) + traffic_cm1_out(8) + traffic_cm1_out(9))/3; 
+traffic_cm1_out_case10_11_12 = (traffic_cm1_out(10) + traffic_cm1_out(11) + traffic_cm1_out(12))/3; 
+
+traffic_out_sl = [traffic_tm1_src_out_case1_2_3, traffic_cm1_out_case1_2_3; traffic_tm1_src_out_case4_5_6, traffic_cm1_out_case4_5_6; traffic_tm1_src_out_case7_8_9, traffic_cm1_out_case7_8_9; traffic_tm1_src_out_case10_11_12, traffic_cm1_out_case10_11_12];
+
 % figure;
 % subplot(1,2,1)
 % bar(traffic_in_sl);
@@ -385,8 +384,8 @@ clear all;
 % xlabel('Layer Size (MB)');
 % ylabel('Incoming traffic/channel (KB/s)');
 % set(gca,'FontSize', 20, 'FontWeight','bold');
-% legend('TM-SL','SLIM-SL','Location','northwest');
-% set(gca, 'XTickLabel', {'0.01' '1' '10' '100'})
+% legend('TM-SL','CM-SL','Location','northwest');
+% set(gca, 'XTickLabel', {'0.1' '1' '10' '100'})
 % % dim = [0.15 0.3 0.3 0.3];
 % % str = {'BW (Mbps):','SRC-DST=942','SRC-Client=10','DST-Client=50','DST-N1=942','DST-N2=942','Load: SRC>DST'};
 % % annotation('textbox',dim,'String',str,'FitBoxToText','on');
@@ -398,144 +397,285 @@ clear all;
 % xlabel('Layer Size (MB)');
 % ylabel('Outgoing traffic/channel (KB/s)');
 % set(gca,'FontSize', 20, 'FontWeight','bold');
-% legend('TM-SL','SLIM-SL','Location','northwest');
-% set(gca, 'XTickLabel', {'0.01' '1' '10' '100'})
+% legend('TM-SL','CM-SL','Location','northwest');
+% set(gca, 'XTickLabel', {'0.1' '1' '10' '100'})
 % % dim = [0.15 0.3 0.3 0.3];
 % % str = {'BW (Mbps):','SRC-DST=942','SRC-Client=10','DST-Client=50','DST-N1=942','DST-N2=942','Load: SRC>DST'};
 % % annotation('textbox',dim,'String',str,'FitBoxToText','on');
 % grid minor;
-% 
-% 
-% %Stateful traffic plots
-% %no delay
-% traffic_tsm1_dst_in_case1_2_3 = (traffic_tsm1_dst_in(1) + traffic_tsm1_dst_in(2) + traffic_tsm1_dst_in(3))/3; 
-% traffic_tsm1_dst_in_case4_5_6 = (traffic_tsm1_dst_in(4) + traffic_tsm1_dst_in(5) + traffic_tsm1_dst_in(6))/3; 
-% traffic_tsm1_dst_in_case7_8_9 = (traffic_tsm1_dst_in(7) + traffic_tsm1_dst_in(8) + traffic_tsm1_dst_in(9))/3; 
-% traffic_tsm1_dst_in_case10_11_12 = (traffic_tsm1_dst_in(10) + traffic_tsm1_dst_in(11) + traffic_tsm1_dst_in(12))/3; 
-% 
-% traffic_csm1_dst_in_case1_2_3 = (traffic_csm1_dst_in(1) + traffic_csm1_dst_in(2) + traffic_csm1_dst_in(3))/3; 
-% traffic_csm1_dst_in_case4_5_6 = (traffic_csm1_dst_in(4) + traffic_csm1_dst_in(5) + traffic_csm1_dst_in(6))/3; 
-% traffic_csm1_dst_in_case7_8_9 = (traffic_csm1_dst_in(7) + traffic_csm1_dst_in(8) + traffic_csm1_dst_in(9))/3; 
-% traffic_csm1_dst_in_case10_11_12 = (traffic_csm1_dst_in(10) + traffic_csm1_dst_in(11) + traffic_csm1_dst_in(12))/3; 
-% 
-% traffic_in_sf = [traffic_tsm1_dst_in_case1_2_3, traffic_csm1_dst_in_case1_2_3; traffic_tsm1_dst_in_case4_5_6, traffic_csm1_dst_in_case4_5_6; traffic_tsm1_dst_in_case7_8_9, traffic_csm1_dst_in_case7_8_9; traffic_tsm1_dst_in_case10_11_12, traffic_csm1_dst_in_case10_11_12];
-% 
-% traffic_tsm1_src_out_case1_2_3 = (traffic_tsm1_src_out(1) + traffic_tsm1_src_out(2) + traffic_tsm1_src_out(3))/3; 
-% traffic_tsm1_src_out_case4_5_6 = (traffic_tsm1_src_out(4) + traffic_tsm1_src_out(5) + traffic_tsm1_src_out(6))/3; 
-% traffic_tsm1_src_out_case7_8_9 = (traffic_tsm1_src_out(7) + traffic_tsm1_src_out(8) + traffic_tsm1_src_out(9))/3; 
-% traffic_tsm1_src_out_case10_11_12 = (traffic_tsm1_src_out(10) + traffic_tsm1_src_out(11) + traffic_tsm1_src_out(12))/3; 
-% 
-% traffic_csm1_out_case1_2_3 = (traffic_csm1_out(1) + traffic_csm1_out(2) + traffic_csm1_out(3))/3; 
-% traffic_csm1_out_case4_5_6 = (traffic_csm1_out(4) + traffic_csm1_out(5) + traffic_csm1_out(6))/3; 
-% traffic_csm1_out_case7_8_9 = (traffic_csm1_out(7) + traffic_csm1_out(8) + traffic_csm1_out(9))/3; 
-% traffic_csm1_out_case10_11_12 = (traffic_csm1_out(10) + traffic_csm1_out(11) + traffic_csm1_out(12))/3; 
-% 
-% traffic_out_sf = [traffic_tsm1_src_out_case1_2_3, traffic_csm1_out_case1_2_3; traffic_tsm1_src_out_case4_5_6, traffic_csm1_out_case4_5_6; traffic_tsm1_src_out_case7_8_9, traffic_csm1_out_case7_8_9; traffic_tsm1_src_out_case10_11_12, traffic_csm1_out_case10_11_12];
-% 
+
+
+%Stateful traffic plots
+%no delay
+traffic_tsm1_dst_in_case1_2_3 = (traffic_tsm1_dst_in(1) + traffic_tsm1_dst_in(2) + traffic_tsm1_dst_in(3))/3; 
+traffic_tsm1_dst_in_case4_5_6 = (traffic_tsm1_dst_in(4) + traffic_tsm1_dst_in(5) + traffic_tsm1_dst_in(6))/3; 
+traffic_tsm1_dst_in_case7_8_9 = (traffic_tsm1_dst_in(7) + traffic_tsm1_dst_in(8) + traffic_tsm1_dst_in(9))/3; 
+traffic_tsm1_dst_in_case10_11_12 = (traffic_tsm1_dst_in(10) + traffic_tsm1_dst_in(11) + traffic_tsm1_dst_in(12))/3; 
+
+traffic_csm1_dst_in_case1_2_3 = (traffic_csm1_dst_in(1) + traffic_csm1_dst_in(2) + traffic_csm1_dst_in(3))/3; 
+traffic_csm1_dst_in_case4_5_6 = (traffic_csm1_dst_in(4) + traffic_csm1_dst_in(5) + traffic_csm1_dst_in(6))/3; 
+traffic_csm1_dst_in_case7_8_9 = (traffic_csm1_dst_in(7) + traffic_csm1_dst_in(8) + traffic_csm1_dst_in(9))/3; 
+traffic_csm1_dst_in_case10_11_12 = (traffic_csm1_dst_in(10) + traffic_csm1_dst_in(11) + traffic_csm1_dst_in(12))/3; 
+
+traffic_in_sf = [traffic_tsm1_dst_in_case1_2_3, traffic_csm1_dst_in_case1_2_3; traffic_tsm1_dst_in_case4_5_6, traffic_csm1_dst_in_case4_5_6; traffic_tsm1_dst_in_case7_8_9, traffic_csm1_dst_in_case7_8_9; traffic_tsm1_dst_in_case10_11_12, traffic_csm1_dst_in_case10_11_12];
+
+traffic_tsm1_src_out_case1_2_3 = (traffic_tsm1_src_out(1) + traffic_tsm1_src_out(2) + traffic_tsm1_src_out(3))/3; 
+traffic_tsm1_src_out_case4_5_6 = (traffic_tsm1_src_out(4) + traffic_tsm1_src_out(5) + traffic_tsm1_src_out(6))/3; 
+traffic_tsm1_src_out_case7_8_9 = (traffic_tsm1_src_out(7) + traffic_tsm1_src_out(8) + traffic_tsm1_src_out(9))/3; 
+traffic_tsm1_src_out_case10_11_12 = (traffic_tsm1_src_out(10) + traffic_tsm1_src_out(11) + traffic_tsm1_src_out(12))/3; 
+
+traffic_csm1_out_case1_2_3 = (traffic_csm1_out(1) + traffic_csm1_out(2) + traffic_csm1_out(3))/3; 
+traffic_csm1_out_case4_5_6 = (traffic_csm1_out(4) + traffic_csm1_out(5) + traffic_csm1_out(6))/3; 
+traffic_csm1_out_case7_8_9 = (traffic_csm1_out(7) + traffic_csm1_out(8) + traffic_csm1_out(9))/3; 
+traffic_csm1_out_case10_11_12 = (traffic_csm1_out(10) + traffic_csm1_out(11) + traffic_csm1_out(12))/3; 
+
+traffic_out_sf = [traffic_tsm1_src_out_case1_2_3, traffic_csm1_out_case1_2_3; traffic_tsm1_src_out_case4_5_6, traffic_csm1_out_case4_5_6; traffic_tsm1_src_out_case7_8_9, traffic_csm1_out_case7_8_9; traffic_tsm1_src_out_case10_11_12, traffic_csm1_out_case10_11_12];
+
 % figure;
 % subplot(1,2,1)
-% bar(traffic_in_sf);
+% bar(traffic_in_sf./1000);
 % title('(a) Traffic IN; Stateful Application','FontSize',20, 'FontWeight','bold');
 % xlabel('Volume Size (MB)');
-% ylabel('Incoming traffic/channel (KB/s)');
+% ylabel('Incoming traffic/channel (MB/s)');
 % set(gca,'FontSize', 20, 'FontWeight','bold');
-% legend('TM-SF','SLIM-SF','Location','northwest');
-% set(gca, 'XTickLabel', {'0.01' '1' '10' '100'})
+% legend('TM-SF','CM-SF','Location','northeast');
+% set(gca, 'XTickLabel', {'0.1' '1' '10' '100'})
 % % dim = [0.15 0.3 0.3 0.3];
 % % str = {'BW (Mbps):','SRC-DST=942','SRC-Client=10','DST-Client=50','DST-N1=942','DST-N2=942','Load: SRC>DST'};
 % % annotation('textbox',dim,'String',str,'FitBoxToText','on');
 % grid minor;
 % 
 % subplot(1,2,2)
-% bar(traffic_out_sf);
+% bar(traffic_out_sf./1000);
 % title('(b) Traffic OUT; Stateful Application','FontSize',20, 'FontWeight','bold');
 % xlabel('Volume Size (MB)');
-% ylabel('Outgoing traffic/channel (KB/s)');
+% ylabel('Outgoing traffic/channel (MB/s)');
 % set(gca,'FontSize', 20, 'FontWeight','bold');
-% legend('TM-SF','SLIM-SF','Location','northwest');
-% set(gca, 'XTickLabel', {'0.01' '1' '10' '100'})
+% legend('TM-SF','CM-SF','Location','northeast');
+% set(gca, 'XTickLabel', {'0.1' '1' '10' '100'})
 % % dim = [0.15 0.3 0.3 0.3];
 % % str = {'BW (Mbps):','SRC-DST=942','SRC-Client=10','DST-Client=50','DST-N1=942','DST-N2=942','Load: SRC>DST'};
 % % annotation('textbox',dim,'String',str,'FitBoxToText','on');
 % grid minor;
+% 
+% 
+% Traffic Plots for per link traffic utilization
+% % Use traffic out from src, node1 and node2
+% % total traffic = src*num_link + node1 + node2
+traffic_tm1 = fopen('traffic_tm1.txt','r');
+traffic_tm1 = textscan(traffic_tm1,'%d %s %f %f %f %f %f %f');
+
+traffic_cm1 = fopen('traffic_cm1.txt','r');
+traffic_cm1 = textscan(traffic_cm1,'%d %s %f %f %f %f %f %f');
+
+
+traffic_tsm1 = fopen('traffic_tsm4.txt','r');
+traffic_tsm1 = textscan(traffic_tsm1,'%d %s %f %f %f %f %f %f');
+
+traffic_csm1 = fopen('traffic_csm4.txt','r');
+traffic_csm1 = textscan(traffic_csm1,'%d %s %f %f %f %f %f %f');
+
+%%Traffic Out from all is equal to traffic in at dst
+%%Number of links between src and dst = 2 
+traffic_tm1_src_out = 2*traffic_tm1{7}(6:6:216);
+traffic_cm1_src_out = 2*traffic_cm1{7}(10:10:360);
+traffic_cm1_n1_out = traffic_cm1{7}(6:10:360);
+traffic_cm1_n2_out = traffic_cm1{7}(8:10:360);
+ 
+traffic_cm1_out = (traffic_cm1_src_out + traffic_cm1_n1_out + traffic_cm1_n2_out);
+ 
+%Stateless traffic plots
+%no delay
+traffic_tm1_dst_in_case1_2_3 = (traffic_tm1_src_out(1) + traffic_tm1_src_out(2) + traffic_tm1_src_out(3))/3; 
+traffic_tm1_dst_in_case4_5_6 = (traffic_tm1_src_out(4) + traffic_tm1_src_out(5) + traffic_tm1_src_out(6))/3; 
+traffic_tm1_dst_in_case7_8_9 = (traffic_tm1_src_out(7) + traffic_tm1_src_out(8) + traffic_tm1_src_out(9))/3; 
+traffic_tm1_dst_in_case10_11_12 = (traffic_tm1_src_out(10) + traffic_tm1_src_out(11) + traffic_tm1_src_out(12))/3; 
+
+traffic_cm1_dst_in_case1_2_3 = (traffic_cm1_out(1) + traffic_cm1_out(2) + traffic_cm1_out(3))/3; 
+traffic_cm1_dst_in_case4_5_6 = (traffic_cm1_out(4) + traffic_cm1_out(5) + traffic_cm1_out(6))/3; 
+traffic_cm1_dst_in_case7_8_9 = (traffic_cm1_out(7) + traffic_cm1_out(8) + traffic_cm1_out(9))/3; 
+traffic_cm1_dst_in_case10_11_12 = (traffic_cm1_out(10) + traffic_cm1_out(11) + traffic_cm1_out(12))/3; 
+
+traffic_in_sl = [traffic_tm1_dst_in_case1_2_3, traffic_cm1_dst_in_case1_2_3; traffic_tm1_dst_in_case4_5_6, traffic_cm1_dst_in_case4_5_6; traffic_tm1_dst_in_case7_8_9, traffic_cm1_dst_in_case7_8_9; traffic_tm1_dst_in_case10_11_12, traffic_cm1_dst_in_case10_11_12];
+
+traffic_tsm1_src_out = 2*traffic_tsm1{7}(6:6:216);
+traffic_csm1_src_out = 2*traffic_csm1{7}(10:10:360);
+traffic_csm1_n1_out = traffic_csm1{7}(6:10:360);
+traffic_csm1_n2_out = traffic_csm1{7}(8:10:360);
+ 
+traffic_csm1_out = (traffic_csm1_src_out + traffic_csm1_n1_out + traffic_csm1_n2_out);
+
+%Stateless traffic plots
+%no delay
+traffic_tsm1_dst_in_case1_2_3 = (traffic_tsm1_src_out(1) + traffic_tsm1_src_out(2) + traffic_tsm1_src_out(3))/3; 
+traffic_tsm1_dst_in_case4_5_6 = (traffic_tsm1_src_out(4) + traffic_tsm1_src_out(5) + traffic_tsm1_src_out(6))/3; 
+traffic_tsm1_dst_in_case7_8_9 = (traffic_tsm1_src_out(7) + traffic_tsm1_src_out(8) + traffic_tsm1_src_out(9))/3; 
+traffic_tsm1_dst_in_case10_11_12 = (traffic_tsm1_src_out(10) + traffic_tsm1_src_out(11) + traffic_tsm1_src_out(12))/3; 
+
+traffic_csm1_dst_in_case1_2_3 = (traffic_csm1_out(1) + traffic_csm1_out(2) + traffic_csm1_out(3))/3; 
+traffic_csm1_dst_in_case4_5_6 = (traffic_csm1_out(4) + traffic_csm1_out(5) + traffic_csm1_out(6))/3; 
+traffic_csm1_dst_in_case7_8_9 = (traffic_csm1_out(7) + traffic_csm1_out(8) + traffic_csm1_out(9))/3; 
+traffic_csm1_dst_in_case10_11_12 = (traffic_csm1_out(10) + traffic_csm1_out(11) + traffic_csm1_out(12))/3; 
+
+traffic_in_sf = [traffic_tsm1_dst_in_case1_2_3, traffic_csm1_dst_in_case1_2_3; traffic_tsm1_dst_in_case4_5_6, traffic_csm1_dst_in_case4_5_6; traffic_tsm1_dst_in_case7_8_9, traffic_csm1_dst_in_case7_8_9; traffic_tsm1_dst_in_case10_11_12, traffic_csm1_dst_in_case10_11_12];
+
+% figure;
+% subplot(1,2,1)
+% bar(traffic_in_sl./1000);
+% title('(a) DST Traffic IN; Stateless Application','FontSize',20, 'FontWeight','bold');
+% xlabel('Layer Size (MB)');
+% ylabel('Total traffic/link (MB)');
+% set(gca,'FontSize', 20, 'FontWeight','bold');
+% legend('TM-SL','CM-SL','Location','northwest');
+% set(gca, 'XTickLabel', {'0.1' '1' '10' '100'})
+% % dim = [0.15 0.3 0.3 0.3];
+% % str = {'BW (Mbps):','SRC-DST=942','SRC-Client=10','DST-Client=50','DST-N1=942','DST-N2=942','Load: SRC>DST'};
+% % annotation('textbox',dim,'String',str,'FitBoxToText','on');
+% grid minor;
+% 
+% subplot(1,2,2)
+% bar(traffic_in_sf./1000);
+% title('(b) DST Traffic IN; Stateful Application','FontSize',20, 'FontWeight','bold');
+% xlabel('Volume Size (MB)');
+% ylabel('Total traffic/link (MB)');
+% set(gca,'FontSize', 20, 'FontWeight','bold');
+% legend('TM-SL','CM-SL','Location','southwest');
+% set(gca, 'XTickLabel', {'0.1' '1' '10' '100'})
+% % dim = [0.15 0.3 0.3 0.3];
+% % str = {'BW (Mbps):','SRC-DST=942','SRC-Client=10','DST-Client=50','DST-N1=942','DST-N2=942','Load: SRC>DST'};
+% % annotation('textbox',dim,'String',str,'FitBoxToText','on');
+% grid minor;
+% 
+%Stateful traffic plots
+%no delay
+traffic_tsm1_dst_in_case1_2_3 = (traffic_tsm1_dst_in(1) + traffic_tsm1_dst_in(2) + traffic_tsm1_dst_in(3))/3; 
+traffic_tsm1_dst_in_case4_5_6 = (traffic_tsm1_dst_in(4) + traffic_tsm1_dst_in(5) + traffic_tsm1_dst_in(6))/3; 
+traffic_tsm1_dst_in_case7_8_9 = (traffic_tsm1_dst_in(7) + traffic_tsm1_dst_in(8) + traffic_tsm1_dst_in(9))/3; 
+traffic_tsm1_dst_in_case10_11_12 = (traffic_tsm1_dst_in(10) + traffic_tsm1_dst_in(11) + traffic_tsm1_dst_in(12))/3; 
+
+traffic_csm1_dst_in_case1_2_3 = (traffic_csm1_dst_in(1) + traffic_csm1_dst_in(2) + traffic_csm1_dst_in(3))/3; 
+traffic_csm1_dst_in_case4_5_6 = (traffic_csm1_dst_in(4) + traffic_csm1_dst_in(5) + traffic_csm1_dst_in(6))/3; 
+traffic_csm1_dst_in_case7_8_9 = (traffic_csm1_dst_in(7) + traffic_csm1_dst_in(8) + traffic_csm1_dst_in(9))/3; 
+traffic_csm1_dst_in_case10_11_12 = (traffic_csm1_dst_in(10) + traffic_csm1_dst_in(11) + traffic_csm1_dst_in(12))/3; 
+
+traffic_in_sf = [traffic_tsm1_dst_in_case1_2_3, traffic_csm1_dst_in_case1_2_3; traffic_tsm1_dst_in_case4_5_6, traffic_csm1_dst_in_case4_5_6; traffic_tsm1_dst_in_case7_8_9, traffic_csm1_dst_in_case7_8_9; traffic_tsm1_dst_in_case10_11_12, traffic_csm1_dst_in_case10_11_12];
+
+traffic_tsm1_src_out_case1_2_3 = (traffic_tsm1_src_out(1) + traffic_tsm1_src_out(2) + traffic_tsm1_src_out(3))/3; 
+traffic_tsm1_src_out_case4_5_6 = (traffic_tsm1_src_out(4) + traffic_tsm1_src_out(5) + traffic_tsm1_src_out(6))/3; 
+traffic_tsm1_src_out_case7_8_9 = (traffic_tsm1_src_out(7) + traffic_tsm1_src_out(8) + traffic_tsm1_src_out(9))/3; 
+traffic_tsm1_src_out_case10_11_12 = (traffic_tsm1_src_out(10) + traffic_tsm1_src_out(11) + traffic_tsm1_src_out(12))/3; 
+
+traffic_csm1_out_case1_2_3 = (traffic_csm1_out(1) + traffic_csm1_out(2) + traffic_csm1_out(3))/3; 
+traffic_csm1_out_case4_5_6 = (traffic_csm1_out(4) + traffic_csm1_out(5) + traffic_csm1_out(6))/3; 
+traffic_csm1_out_case7_8_9 = (traffic_csm1_out(7) + traffic_csm1_out(8) + traffic_csm1_out(9))/3; 
+traffic_csm1_out_case10_11_12 = (traffic_csm1_out(10) + traffic_csm1_out(11) + traffic_csm1_out(12))/3; 
+
+traffic_out_sf = [traffic_tsm1_src_out_case1_2_3, traffic_csm1_out_case1_2_3; traffic_tsm1_src_out_case4_5_6, traffic_csm1_out_case4_5_6; traffic_tsm1_src_out_case7_8_9, traffic_csm1_out_case7_8_9; traffic_tsm1_src_out_case10_11_12, traffic_csm1_out_case10_11_12];
+
+figure;
+subplot(1,2,1)
+bar(traffic_in_sf./1000);
+title('(a) Traffic IN; Stateful Application','FontSize',20, 'FontWeight','bold');
+xlabel('Volume Size (MB)');
+ylabel('Incoming traffic/channel (MB/s)');
+set(gca,'FontSize', 20, 'FontWeight','bold');
+legend('TM-SF','CM-SF','Location','southeast');
+set(gca, 'XTickLabel', {'0.1' '1' '10' '100'})
+% dim = [0.15 0.3 0.3 0.3];
+% str = {'BW (Mbps):','SRC-DST=942','SRC-Client=10','DST-Client=50','DST-N1=942','DST-N2=942','Load: SRC>DST'};
+% annotation('textbox',dim,'String',str,'FitBoxToText','on');
+grid minor;
+
+subplot(1,2,2)
+bar(traffic_out_sf./1000);
+title('(b) Traffic OUT; Stateful Application','FontSize',20, 'FontWeight','bold');
+xlabel('Volume Size (MB)');
+ylabel('Outgoing traffic/channel (MB/s)');
+set(gca,'FontSize', 20, 'FontWeight','bold');
+legend('TM-SF','CM-SF','Location','southeast');
+set(gca, 'XTickLabel', {'0.1' '1' '10' '100'})
+% dim = [0.15 0.3 0.3 0.3];
+% str = {'BW (Mbps):','SRC-DST=942','SRC-Client=10','DST-Client=50','DST-N1=942','DST-N2=942','Load: SRC>DST'};
+% annotation('textbox',dim,'String',str,'FitBoxToText','on');
+grid minor;
 
 
 %% Latency Plots
- for k=1:36
-    latency_tm_before{k}=dlmread(sprintf('tm1_latency/before_trafficgencl.log.%d.txt',k-1));
-    latency_tm_after{k}=dlmread(sprintf('tm1_latency/after_trafficgencl.log.%d.txt',k-1));
-    latency_cm_before{k}=dlmread(sprintf('cm1_latency/before_trafficgencl.log.%d.txt',k-1));
-    latency_cm_after{k}=dlmread(sprintf('cm1_latency/after_trafficgencl.log.%d.txt',k-1));
-    latency_tsm_before{k}=dlmread(sprintf('tsm1_latency/before_trafficgencl.log.%d.txt',k-1));
-    latency_tsm_after{k}=dlmread(sprintf('tsm1_latency/after_trafficgencl.log.%d.txt',k-1));
-    latency_csm_before{k}=dlmread(sprintf('csm1_latency/before_trafficgencl.log.%d.txt',k-1));
-    latency_csm_after{k}=dlmread(sprintf('csm1_latency/after_trafficgencl.log.%d.txt',k-1));
- end
-
-%Compare latency CDF for load src>dst
-latency_tm_case1_4_7_10 = [latency_tm_before{1}(:,2)' latency_tm_before{4}(:,2)' latency_tm_before{7}(:,2)' latency_tm_before{10}(:,2)'];
-latency_cm_case1_4_7_10 = [latency_cm_before{1}(:,2)' latency_cm_before{4}(:,2)' latency_cm_before{7}(:,2)' latency_cm_before{10}(:,2)'];
-latency_tsm_case1_4_7_10 = [latency_tsm_before{1}(:,2)' latency_tsm_before{4}(:,2)' latency_tsm_before{7}(:,2)' latency_tsm_before{10}(:,2)'];
-latency_csm_case1_4_7_10 = [latency_csm_before{1}(:,2)' latency_csm_before{4}(:,2)' latency_csm_before{7}(:,2)' latency_csm_before{10}(:,2)'];
-
-figure;
-h1 = cdfplot(latency_tm_case1_4_7_10);
-hold on;
-h2 = cdfplot(latency_cm_case1_4_7_10);
-set( h1,'LineStyle',':','LineWidth',3,'MarkerSize',5);
-set( h2, 'LineStyle','-','LineWidth',3,'MarkerSize',5);
-grid minor;
-xlabel('Application Latency (ms)');
-ylabel('CDF');
-title('Stateless Applicaiton; Load SRC > DST')
-set(gca,'FontSize',20, 'FontWeight','bold');
-legend('TM-SL','SLIM-SL','Location','northwest');
-
-
-figure;
-h1 = cdfplot(latency_tsm_case1_4_7_10);
-hold on;
-h2 = cdfplot(latency_csm_case1_4_7_10);
-set( h1,'LineStyle',':','LineWidth',3,'MarkerSize',5);
-set( h2, 'LineStyle','-','LineWidth',3,'MarkerSize',5);
-grid minor;
-xlabel('Application Latency (ms)');
-ylabel('CDF');
-title('Stateful Applicaiton; Load SRC > DST')
-set(gca,'FontSize',20, 'FontWeight','bold');
-legend('TM-SF','SLIM-SF','Location','northwest');
-
-%Compare latency CDF for load src<dst
-latency_tm_case2_5_8_11 = [latency_tm_before{2}(:,2)' latency_tm_before{5}(:,2)' latency_tm_before{8}(:,2)' latency_tm_before{11}(:,2)'];
-latency_cm_case2_5_8_11 = [latency_cm_before{2}(:,2)' latency_cm_before{5}(:,2)' latency_cm_before{8}(:,2)' latency_cm_before{11}(:,2)'];
-latency_tsm_case2_5_8_11 = [latency_tsm_before{2}(:,2)' latency_tsm_before{5}(:,2)' latency_tsm_before{8}(:,2)' latency_tsm_before{11}(:,2)'];
-latency_csm_case2_5_8_11 = [latency_csm_before{2}(:,2)' latency_csm_before{5}(:,2)' latency_csm_before{8}(:,2)' latency_csm_before{11}(:,2)'];
-
-figure;
-h1 = cdfplot(latency_tm_case2_5_8_11);
-hold on;
-h2 = cdfplot(latency_cm_case2_5_8_11);
-set( h1,'LineStyle',':','LineWidth',3,'MarkerSize',5);
-set( h2, 'LineStyle','-','LineWidth',3,'MarkerSize',5);
-grid minor;
-xlabel('Application Latency (ms)');
-ylabel('CDF');
-title('Stateless Applicaiton; Load SRC<DST')
-set(gca,'FontSize',20, 'FontWeight','bold');
-legend('TM-SL','SLIM-SL','Location','northwest');
-
-figure;
-h1 = cdfplot(latency_tsm_case2_5_8_11);
-hold on;
-h2 = cdfplot(latency_csm_case2_5_8_11);
-set( h1,'LineStyle',':','LineWidth',3,'MarkerSize',5);
-set( h2, 'LineStyle','-','LineWidth',3,'MarkerSize',5);
-grid minor;
-xlabel('Application Latency (ms)');
-ylabel('CDF');
-title('Stateful Applicaiton; Load SRC<DST')
-set(gca,'FontSize',20, 'FontWeight','bold');
-legend('TM-SF','SLIM-SF','Location','northwest');
+%  for k=1:36
+%     latency_tm_before{k}=dlmread(sprintf('tm1_latency/before_trafficgencl.log.%d.txt',k-1));
+%     latency_tm_after{k}=dlmread(sprintf('tm1_latency/after_trafficgencl.log.%d.txt',k-1));
+%     latency_cm_before{k}=dlmread(sprintf('cm1_latency/before_trafficgencl.log.%d.txt',k-1));
+%     latency_cm_after{k}=dlmread(sprintf('cm1_latency/after_trafficgencl.log.%d.txt',k-1));
+%     latency_tsm_before{k}=dlmread(sprintf('tsm1_latency/before_trafficgencl.log.%d.txt',k-1));
+%     latency_tsm_after{k}=dlmread(sprintf('tsm1_latency/after_trafficgencl.log.%d.txt',k-1));
+%     latency_csm_before{k}=dlmread(sprintf('csm1_latency/before_trafficgencl.log.%d.txt',k-1));
+%     latency_csm_after{k}=dlmread(sprintf('csm1_latency/after_trafficgencl.log.%d.txt',k-1));
+%  end
+% 
+% %Compare latency CDF for load src>dst
+% latency_tm_case1_4_7_10 = [latency_tm_before{1}(:,2)' latency_tm_before{4}(:,2)' latency_tm_before{7}(:,2)' latency_tm_before{10}(:,2)'];
+% latency_cm_case1_4_7_10 = [latency_cm_before{1}(:,2)' latency_cm_before{4}(:,2)' latency_cm_before{7}(:,2)' latency_cm_before{10}(:,2)'];
+% latency_tsm_case1_4_7_10 = [latency_tsm_before{1}(:,2)' latency_tsm_before{4}(:,2)' latency_tsm_before{7}(:,2)' latency_tsm_before{10}(:,2)'];
+% latency_csm_case1_4_7_10 = [latency_csm_before{1}(:,2)' latency_csm_before{4}(:,2)' latency_csm_before{7}(:,2)' latency_csm_before{10}(:,2)'];
+% 
+% figure;
+% h1 = cdfplot(latency_tm_case1_4_7_10);
+% hold on;
+% h2 = cdfplot(latency_cm_case1_4_7_10);
+% set( h1,'LineStyle',':','LineWidth',3,'MarkerSize',5);
+% set( h2, 'LineStyle','-','LineWidth',3,'MarkerSize',5);
+% grid minor;
+% xlabel('Application Latency (ms)');
+% ylabel('CDF');
+% title('Stateless Applicaiton; Load SRC > DST')
+% set(gca,'FontSize',20, 'FontWeight','bold');
+% legend('TM-SL','CM-SL','Location','northwest');
+% 
+% 
+% figure;
+% h1 = cdfplot(latency_tsm_case1_4_7_10);
+% hold on;
+% h2 = cdfplot(latency_csm_case1_4_7_10);
+% set( h1,'LineStyle',':','LineWidth',3,'MarkerSize',5);
+% set( h2, 'LineStyle','-','LineWidth',3,'MarkerSize',5);
+% grid minor;
+% xlabel('Application Latency (ms)');
+% ylabel('CDF');
+% title('Stateful Applicaiton; Load SRC > DST')
+% set(gca,'FontSize',20, 'FontWeight','bold');
+% legend('TM-SF','CM-SF','Location','northwest');
+% 
+% %Compare latency CDF for load src<dst
+% latency_tm_case2_5_8_11 = [latency_tm_before{2}(:,2)' latency_tm_before{5}(:,2)' latency_tm_before{8}(:,2)' latency_tm_before{11}(:,2)'];
+% latency_cm_case2_5_8_11 = [latency_cm_before{2}(:,2)' latency_cm_before{5}(:,2)' latency_cm_before{8}(:,2)' latency_cm_before{11}(:,2)'];
+% latency_tsm_case2_5_8_11 = [latency_tsm_before{2}(:,2)' latency_tsm_before{5}(:,2)' latency_tsm_before{8}(:,2)' latency_tsm_before{11}(:,2)'];
+% latency_csm_case2_5_8_11 = [latency_csm_before{2}(:,2)' latency_csm_before{5}(:,2)' latency_csm_before{8}(:,2)' latency_csm_before{11}(:,2)'];
+% 
+% figure;
+% h1 = cdfplot(latency_tm_case2_5_8_11);
+% hold on;
+% h2 = cdfplot(latency_cm_case2_5_8_11);
+% set( h1,'LineStyle',':','LineWidth',3,'MarkerSize',5);
+% set( h2, 'LineStyle','-','LineWidth',3,'MarkerSize',5);
+% grid minor;
+% xlabel('Application Latency (ms)');
+% ylabel('CDF');
+% title('Stateless Applicaiton; Load SRC<DST')
+% set(gca,'FontSize',20, 'FontWeight','bold');
+% legend('TM-SL','CM-SL','Location','northwest');
+% 
+% figure;
+% h1 = cdfplot(latency_tsm_case2_5_8_11);
+% hold on;
+% h2 = cdfplot(latency_csm_case2_5_8_11);
+% set( h1,'LineStyle',':','LineWidth',3,'MarkerSize',5);
+% set( h2, 'LineStyle','-','LineWidth',3,'MarkerSize',5);
+% grid minor;
+% xlabel('Application Latency (ms)');
+% ylabel('CDF');
+% title('Stateful Applicaiton; Load SRC<DST')
+% set(gca,'FontSize',20, 'FontWeight','bold');
+% legend('TM-SF','CM-SF','Location','northwest');
 
 
 %% OLD Plotting
@@ -644,8 +784,8 @@ legend('TM-SF','SLIM-SF','Location','northwest');
 % xlabel('Layer Size (MB)');
 % ylabel('Avg. Throughput (KB/s) - Source (OUT)');
 % set(gca,'FontSize', 20, 'FontWeight','bold');
-% legend('TM-SL','SLIM-SL','Location','northwest');
-% set(gca, 'XTickLabel', {'0.01' '1' '10' '100'})
+% legend('TM-SL','CM-SL','Location','northwest');
+% set(gca, 'XTickLabel', {'0.1' '1' '10' '100'})
 % dim = [0.15 0.3 0.3 0.3];
 % str = {'BW (Mbps):','SRC-DST=942','SRC-Client=10','DST-Client=50','DST-N1=942','DST-N2=942','Load: SRC>DST'};
 % annotation('textbox',dim,'String',str,'FitBoxToText','on');
@@ -656,8 +796,8 @@ legend('TM-SF','SLIM-SF','Location','northwest');
 % xlabel('Layer Size (MB)');
 % ylabel('Avg. Throughput (KB/s) - Source (OUT)');
 % set(gca,'FontSize', 20, 'FontWeight','bold');
-% legend('TM-SL','SLIM-SL','Location','northwest');
-% set(gca, 'XTickLabel', {'0.01' '1' '10' '100'})
+% legend('TM-SL','CM-SL','Location','northwest');
+% set(gca, 'XTickLabel', {'0.1' '1' '10' '100'})
 % dim = [0.45 0.3 0.3 0.3];
 % str = {'BW (Mbps):','SRC-DST=100','SRC-Client=10','DST-Client=50','DST-N1=942','DST-N2=942','Load: SRC>DST'};
 % annotation('textbox',dim,'String',str,'FitBoxToText','on');
@@ -668,8 +808,8 @@ legend('TM-SF','SLIM-SF','Location','northwest');
 % xlabel('Layer Size (MB)');
 % ylabel('Avg. Throughput (KB/s) - Source (OUT)');
 % set(gca,'FontSize', 20, 'FontWeight','bold');
-% legend('TM-SL','SLIM-SL','Location','northwest');
-% set(gca, 'XTickLabel', {'0.01' '1' '10' '100'})
+% legend('TM-SL','CM-SL','Location','northwest');
+% set(gca, 'XTickLabel', {'0.1' '1' '10' '100'})
 % dim = [0.75 0.3 0.3 0.3];
 % str = {'BW (Mbps):','SRC-DST=100','SRC-Client=10','DST-Client=50','DST-N1=942','DST-N2=942','Load: SRC>DST'};
 % annotation('textbox',dim,'String',str,'FitBoxToText','on');
@@ -689,8 +829,8 @@ legend('TM-SF','SLIM-SF','Location','northwest');
 % xlabel('Volume Size (MB)');
 % ylabel('Avg. Throughput (KB/s) - Source (OUT)');
 % set(gca,'FontSize', 20, 'FontWeight','bold');
-% legend('TM-SF','SLIM-SF','Location','northwest');
-% set(gca, 'XTickLabel', {'0.01' '1' '10' '100'})
+% legend('TM-SF','CM-SF','Location','northwest');
+% set(gca, 'XTickLabel', {'0.1' '1' '10' '100'})
 % dim = [0.15 0.3 0.3 0.3];
 % str = {'Layer size=10MB','State change=10%','BW (Mbps):','SRC-DST=942','SRC-Client=10','DST-Client=50','DST-N1=942','DST-N2=942','Load: SRC>DST',};
 % annotation('textbox',dim,'String',str,'FitBoxToText','on');
@@ -701,8 +841,8 @@ legend('TM-SF','SLIM-SF','Location','northwest');
 % xlabel('Volume Size (MB)');
 % ylabel('Avg. Throughput (KB/s) - Source (OUT)');
 % set(gca,'FontSize', 20, 'FontWeight','bold');
-% legend('TM-SF','SLIM-SF','Location','northwest');
-% set(gca, 'XTickLabel', {'0.01' '1' '10' '100'})
+% legend('TM-SF','CM-SF','Location','northwest');
+% set(gca, 'XTickLabel', {'0.1' '1' '10' '100'})
 % dim = [0.45 0.3 0.3 0.3];
 % str = {'Layer size=10MB','State change=10%','BW (Mbps):','SRC-DST=100','SRC-Client=10','DST-Client=50','DST-N1=942','DST-N2=942','Load: SRC>DST'};
 % annotation('textbox',dim,'String',str,'FitBoxToText','on');
@@ -713,8 +853,8 @@ legend('TM-SF','SLIM-SF','Location','northwest');
 % xlabel('Volume Size (MB)');
 % ylabel('Avg. Throughput (KB/s) - Source (OUT)');
 % set(gca,'FontSize', 20, 'FontWeight','bold');
-% legend('TM-SF','SLIM-SF','Location','northwest');
-% set(gca, 'XTickLabel', {'0.01' '1' '10' '100'})
+% legend('TM-SF','CM-SF','Location','northwest');
+% set(gca, 'XTickLabel', {'0.1' '1' '10' '100'})
 % dim = [0.75 0.3 0.3 0.3];
 % str = {'Layer size=10MB','State change=10%','BW (Mbps):','SRC-DST=100','SRC-Client=10','DST-Client=50','DST-N1=942','DST-N2=942','Load: SRC>DST'};
 % annotation('textbox',dim,'String',str,'FitBoxToText','on');
@@ -768,9 +908,9 @@ legend('TM-SF','SLIM-SF','Location','northwest');
 % ylabel('CDF');
 % title('Application Response Time CDF')
 % set(gca,'FontSize',20, 'FontWeight','bold');
-% legend('Traditional SL','SLIM SL','Location','northwest');
+% legend('Traditional SL','CM SL','Location','northwest');
 % 
-% % legend('Traditional SL','SLIM SL','Traditional SF','SLIM SF','Location','northwest');
+% % legend('Traditional SL','CM SL','Traditional SF','CM SF','Location','northwest');
 % 
 % subplot(1,2,2)
 % % h1 = cdfplot(latency_tm1(:,2));
@@ -791,7 +931,7 @@ legend('TM-SF','SLIM-SF','Location','northwest');
 % ylabel('CDF');
 % title('Application Response Time CDF')
 % set(gca,'FontSize',20, 'FontWeight','bold');
-% legend('Traditional SF','SLIM SF','Location','northwest');
+% legend('Traditional SF','CM SF','Location','northwest');
 
 
 % figure
@@ -813,7 +953,7 @@ legend('TM-SF','SLIM-SF','Location','northwest');
 % ylabel('CDF');
 % title('Migration Time CDF')
 % set(gca,'FontSize',20, 'FontWeight','bold');
-% legend('Traditional SL','SLIM SL','Location','northwest');
+% legend('Traditional SL','CM SL','Location','northwest');
 % 
 % figure
 % plot(1,1)
@@ -832,7 +972,7 @@ legend('TM-SF','SLIM-SF','Location','northwest');
 % ylabel('CDF');
 % title('Migration Time CDF')
 % set(gca,'FontSize',20, 'FontWeight','bold');
-% legend('Traditional SF','SLIM SF','Location','northwest');
+% legend('Traditional SF','CM SF','Location','northwest');
 % 
 
 % 
