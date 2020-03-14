@@ -35,15 +35,3 @@ For example, it may require the source to create archives with the updated conte
 A key point here is again being able to address entities across clusters. We have already stated how this is possible for layers and volumes, but not for containers: how does the destination refer to the source container and how does `SourceProxy` know where/in which node the container is located?
 
 The idea is to use global names for containers as we did for writable volumes: when the multi-cluster migration request is "divided" into two migrations (source to `DestinationProxy` and `SourceProxy` to destination), a _common container name_ (CCN) is chosen as an alias to identify the source container in a unique way: when a RPC arrives at `DestinationProxy` for a given CCN, it translates it into a `(source, container)` pair using a lookup table.
-
-## Implementation ##
-
-### SourceProxy ###
-
-### DestinationProxy ###
-
-### Metadata off-line exchange ###
-
-## Example ##
-
-### Setup ###
