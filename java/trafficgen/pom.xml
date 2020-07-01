@@ -21,7 +21,7 @@
     <websocket.version>1.1</websocket.version>
     <servlet.version>2.5</servlet.version>
     <javaee.version>7.0</javaee.version>
-    <log4j.version>2.10.0</log4j.version>
+    <log4j.version>2.13.3</log4j.version>
   </properties>
   
   <!-- scope: provided -> at runtime libraries provided by web container -->
